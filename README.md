@@ -12,7 +12,7 @@
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-essentials/main/install.command)"
 ```
 
-화면 안내만 따라가면 끝. 여러 번 실행해도 안전합니다 (중복 적용 X, 기존 설정 자동 백업).
+처음에 **적용할 항목을 체크**하고, 화면 안내만 따라가면 끝. 여러 번 실행해도 안전합니다 (중복 적용 X, 기존 설정 자동 백업).
 
 <details>
 <summary>다른 방법: 파일 더블클릭</summary>
@@ -37,6 +37,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 - 한국어 자판 키보드의 **[한/영] 키**도 같은 동작
 - **블루투스 외장 키보드** 지원 (설치 중 목록에서 선택)
 
+### 2. 마우스 휠 방향이 반대 — 트랙패드랑 따로 못 바꿈
+> 마우스 휠 방향을 바꾸면 트랙패드 두 손가락 스크롤까지 같이 바뀌고, 휠에 가속이 붙어 윈도우와 느낌이 다름
+
+**→ 트랙패드는 맥 방식 그대로, 마우스만 윈도우처럼.** (무료 오픈소스 [LinearMouse](https://linearmouse.app) 사용)
+
+설치 중 원하는 것만 체크:
+- ☑︎ **휠 방향 윈도우처럼** — 아래로 굴리면 아래로
+- ☑︎ **휠 한 칸 = 3줄, 가속 없이 일정하게** — 윈도우 기본값과 같은 느낌
+- ☐ **포인터 가속 끄기** — 움직인 만큼만 이동 (게임·디자인 작업용, 기본은 꺼 둠)
+
+> 로지텍 Logi Options+ 를 쓰고 있다면, Options+ 쪽 스크롤 방향·부드러운 스크롤 설정은 기본값으로 두세요 (두 앱이 겹치면 이상하게 움직일 수 있어요).
+
 ---
 
 ## 🗺 로드맵 — 커뮤니티에서 반복되는 불만
@@ -44,10 +56,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 | 순위 | 불만 | 자주 나오는 곳 | 계획 |
 |---|---|---|---|
 | 1 | 한/영 전환 딜레이·영문 섞임 | 클리앙, velog, 블로그 다수 | ✅ **완료** |
-| 2 | **한글 파일명 자소 분리** — 맥에서 보낸 파일이 윈도우에서 `ㅎㅏㄴㄱㅡㄹ`로 보임 | 클리앙, MS Q&A, 블로그 다수 | 🔜 Finder 우클릭 "파일명 윈도우용으로 정리" 추가 |
-| 3 | **₩ / 백틱(`)** — 한글 상태에서 ` 대신 ₩ 입력 | 개발자 블로그 다수 | 🔜 한글 상태에서도 ` 입력 |
+| 2 | **마우스 휠 방향** — 트랙패드와 마우스를 따로 못 바꿈, 휠 가속 | 클리앙, 블로그 다수 | ✅ **완료** |
+| 3 | **한글 파일명 자소 분리** — 맥에서 보낸 파일이 윈도우에서 `ㅎㅏㄴㄱㅡㄹ`로 보임 | 클리앙, MS Q&A, 블로그 다수 | 🔜 Finder 우클릭 "파일명 윈도우용으로 정리" 추가 |
 | 4 | **외장 키보드 Home / End** 가 줄 처음·끝으로 안 감 | 클리앙 (로지텍 등) | 🔜 Home/End를 윈도우처럼 |
-| 5 | **마우스 휠 방향** — 트랙패드와 마우스를 따로 못 바꿈, 휠 가속 | 클리앙, 블로그 다수 | 🔜 선택 설치 (마우스 전용 휠 설정 앱) |
+| 5 | **₩ / 백틱(`)** — 한글 상태에서 ` 대신 ₩ 입력 | 개발자 블로그 다수 | 🔜 한글 상태에서도 ` 입력 |
 | – | 한글 입력 후 Enter 시 마지막 글자 중복·사라짐 | 크롬·구글 문서·에디터 이슈 | ⚠️ 앱 쪽 버그라 설정으로 해결 불가. 안내만 |
 | – | 은행·공동인증서, HWP 문서 | 클리앙, 스레드 | ⚠️ 설정 영역 밖. 대안 안내 예정 (한컴독스, 네이버 MYBOX 등) |
 
@@ -57,6 +69,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 
 ## 📋 설치 과정
 
+**⌨️ 한/영 전환**
+
 | 단계 | 하는 일 | 내가 할 일 |
 |---|---|---|
 | 1 | [Karabiner-Elements](https://karabiner-elements.pqrs.org) 확인·설치 (Homebrew 사용) | 처음이면 **권한 허용** (아래) |
@@ -64,9 +78,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 | 3 | 연결된 외장 키보드 확인 | 목록에서 **키보드만** 선택 (마우스 제외) |
 | 4 | 규칙 적용 (오른쪽 ⌘ 단독 → F18) | 없음 |
 
-**처음 설치 시 권한 허용** — Karabiner 창에도 안내가 나와요.
+**🖱 마우스 휠**
+
+| 단계 | 하는 일 | 내가 할 일 |
+|---|---|---|
+| 1 | 적용할 마우스 설정 선택 | 체크 |
+| 2 | [LinearMouse](https://linearmouse.app) 확인·설치, 로그인 시 자동 실행 등록 | 처음이면 **손쉬운 사용** 권한 허용 |
+| 3 | 마우스 전용 설정 적용 (트랙패드는 그대로) | 없음 |
+
+**처음 설치 시 권한 허용**
 1. **시스템 설정 → 일반 → 로그인 항목 및 확장 프로그램 → 드라이버 확장 프로그램** → Karabiner 켜기
 2. **시스템 설정 → 개인정보 보호 및 보안 → 입력 모니터링** → `karabiner_grabber` / `Karabiner-Core-Service` 켜기
+3. (마우스 선택 시) **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용** → LinearMouse 켜기
 
 > Homebrew가 없으면 Karabiner 다운로드 페이지가 열려요. 설치 후 명령어를 다시 실행하세요.
 
@@ -86,6 +109,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 **전환은 되는데 반영이 늦어요**
 → 이 설치기는 macOS 기본 단축키(F18)를 거쳐 전환해서 바로 반영돼요. 예전에 Karabiner의 `select_input_source`나 `enable_cgeventtap_fallback`을 직접 설정했다면 설치기가 정리해 줍니다.
 
+**마우스 휠이 그대로예요 / 트랙패드까지 바뀌었어요**
+→ LinearMouse의 손쉬운 사용 권한을 확인하세요. 트랙패드까지 윈도우 방향이면 시스템 설정 → 트랙패드 → **자연스러운 스크롤**을 켠 뒤 설치기를 다시 실행하세요 (이 설치기는 "트랙패드는 맥 기본, 마우스만 반대"를 전제로 해요).
+
 ## 🔧 작동 원리
 
 ```
@@ -95,11 +121,19 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 Karabiner가 입력 소스를 직접 바꾸면 메뉴바만 바뀌고 현재 창엔 늦게 반영되는 문제가 있어, macOS 단축키로 넘겨 **즉시 반영**되게 했어요.
 변경되는 파일: `~/.config/karabiner/karabiner.json` (백업: 같은 폴더 `karabiner.backup-날짜.json`), macOS 키보드 단축키 설정.
 
+```
+마우스 휠 ──LinearMouse (마우스일 때만)──▶ 방향 반전 · 한 칸 3줄
+트랙패드 ─────────────────────────────▶ 그대로 (맥 기본)
+```
+
+변경되는 파일: `~/.config/linearmouse/linearmouse.json` (백업: 같은 폴더).
+
 ## 🗑 되돌리기
 
 - Karabiner-Elements 앱 → **Complex Modifications**에서 `[한영키]` 규칙 삭제, 또는
 - `~/.config/karabiner/`의 백업 파일로 `karabiner.json` 교체, 또는
 - Karabiner-Elements 앱 제거 (앱 메뉴 → Uninstall)
+- 마우스: LinearMouse 메뉴바 아이콘 → 설정 초기화, 또는 LinearMouse 앱 삭제
 
 ---
 
