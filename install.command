@@ -1,5 +1,6 @@
 #!/bin/bash
-# 우측 ⌘ 한/영 전환 원클릭 설정 (Karabiner-Elements + macOS 입력 소스 단축키 F18)
+# 맥 한국인 필수 설정 — https://github.com/hanseolhui/mac-korean-essentials
+# 현재 포함: 우측 ⌘ 한/영 전환 (Karabiner-Elements + macOS 입력 소스 단축키 F18)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 
 set -u
@@ -16,7 +17,7 @@ pause() { read -r -p "  $1 (Enter) " _; }
 
 clear
 echo "==============================================="
-echo "   맥북 우측 ⌘ 한/영 전환 원클릭 설정"
+echo "   맥 한국인 필수 설정 — 우측 ⌘ 한/영 전환"
 echo "==============================================="
 
 if [ "${SKIP_SYSTEM:-0}" != "1" ]; then
