@@ -1,12 +1,13 @@
 #!/bin/bash
 # 맥 한국인 필수 설정 — https://github.com/hanseolhui/mac-korean-essentials
 # 포함: ① 오른쪽 ⌘ 한/영 전환  ② 마우스 휠 윈도우처럼 (트랙패드는 그대로)
+#       ③ Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 #
 # 테스트/자동화용 환경 변수:
-#   MODULES=hanyoung,mouse  선택 창 없이 실행할 항목
+#   MODULES=hanyoung,mouse,filename  선택 창 없이 실행할 항목
 #   SKIP_SYSTEM=1           앱 설치·시스템 설정은 건너뛰고 설정 파일만 수정
-#   KARABINER_JSON, LINEARMOUSE_JSON, DEVICES_JSON, MOUSE_OPTS
+#   KARABINER_JSON, LINEARMOUSE_JSON, DEVICES_JSON, MOUSE_OPTS, SERVICES_DIR
 
 set -u
 KJSON="${KARABINER_JSON:-$HOME/.config/karabiner/karabiner.json}"
@@ -17,6 +18,11 @@ RULE_DESC="[한영키] Right Command alone -> F18 (macOS input source toggle)"
 LMJSON="${LINEARMOUSE_JSON:-$HOME/.config/linearmouse/linearmouse.json}"
 LMAPP="/Applications/LinearMouse.app"
 SKIP="${SKIP_SYSTEM:-0}"
+RAW="https://raw.githubusercontent.com/hanseolhui/mac-korean-essentials/main"
+SERVICES="${SERVICES_DIR:-$HOME/Library/Services}"
+WF_NAME="한글 파일명 윈도우용으로 정리.workflow"
+WF_URL="quick-actions/%ED%95%9C%EA%B8%80%20%ED%8C%8C%EC%9D%BC%EB%AA%85%20%EC%9C%88%EB%8F%84%EC%9A%B0%EC%9A%A9%EC%9C%BC%EB%A1%9C%20%EC%A0%95%EB%A6%AC.workflow"
+SRC_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 
 title() { printf "\n\033[1;36m▶ %s\033[0m\n" "$1"; }
 ok()    { printf "  \033[32m✓\033[0m %s\n" "$1"; }
@@ -54,8 +60,9 @@ if [ -z "${MODULES:-}" ]; then
   MODULES=$(run_jxa <<'JS'
 function run(){
   const app = Application.currentApplication(); app.includeStandardAdditions = true;
-  const items = ['⌨️  오른쪽 ⌘로 한/영 전환', '🖱  마우스 휠 윈도우처럼 (트랙패드는 그대로)'];
-  const keys  = ['hanyoung', 'mouse'];
+  const items = ['⌨️  오른쪽 ⌘로 한/영 전환', '🖱  마우스 휠 윈도우처럼 (트랙패드는 그대로)',
+                 '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)'];
+  const keys  = ['hanyoung', 'mouse', 'filename'];
   let r;
   try { r = app.chooseFromList(items, { withTitle:'맥 한국인 필수 설정',
         withPrompt:'적용할 항목을 고르세요. (⌘ 클릭으로 여러 개 선택)',
@@ -278,9 +285,38 @@ JS
   DONE_MSG="${DONE_MSG:-}\n • 마우스 휠을 굴려 윈도우처럼 움직이는지 확인 (트랙패드는 그대로)"
 }
 
+# ════════════════════════════════════════════════════
+#  ③ 한글 파일명 자소 분리 해결 (Finder 빠른 동작)
+# ════════════════════════════════════════════════════
+module_filename() {
+  echo; echo "━━━━━━━━ 📁  한글 파일명 윈도우용으로 정리 ━━━━━━━━"
+  echo "  맥에서 만든 한글 파일명은 윈도우에서 'ㅎㅏㄴㄱㅡㄹ'처럼 풀어져 보여요."
+  echo "  Finder에서 우클릭 한 번으로 윈도우에서도 멀쩡한 이름으로 바꾸는 메뉴를 추가합니다."
+
+  title "빠른 동작 설치"
+  local dest="$SERVICES/$WF_NAME" tmp
+  mkdir -p "$SERVICES"
+  tmp=$(mktemp -d -t kressentials)
+  if [ -d "$SRC_DIR/quick-actions/$WF_NAME" ]; then
+    cp -R "$SRC_DIR/quick-actions/$WF_NAME" "$tmp/"
+  else  # 한 줄 설치(curl)로 실행한 경우 GitHub에서 받기
+    mkdir -p "$tmp/$WF_NAME/Contents"
+    for f in Info.plist document.wflow; do
+      curl -fsSL "$RAW/$WF_URL/Contents/$f" -o "$tmp/$WF_NAME/Contents/$f" || { warn "다운로드 실패: $f"; rm -rf "$tmp"; return 1; }
+    done
+  fi
+  plutil -lint -s "$tmp/$WF_NAME/Contents/document.wflow" "$tmp/$WF_NAME/Contents/Info.plist" || { warn "파일이 손상됐어요. 다시 실행해 주세요."; rm -rf "$tmp"; return 1; }
+  rm -rf "$dest"; mv "$tmp/$WF_NAME" "$dest"; rm -rf "$tmp"
+  xattr -dr com.apple.quarantine "$dest" 2>/dev/null
+  [ "$SKIP" = "1" ] || /System/Library/CoreServices/pbs -update >/dev/null 2>&1
+  ok "Finder 우클릭 > 빠른 동작 > '한글 파일명 윈도우용으로 정리' 추가"
+  DONE_MSG="${DONE_MSG:-}\n • 윈도우로 보낼 파일·폴더를 Finder에서 우클릭 > 빠른 동작 > '한글 파일명 윈도우용으로 정리'\n   (메뉴가 안 보이면 시스템 설정 > 일반 > 로그인 항목 및 확장 프로그램 > Finder 에서 켜기)"
+}
+
 DONE_MSG=""
 has hanyoung && module_hanyoung
 has mouse    && module_mouse
+has filename && module_filename
 
 echo
 echo "==============================================="
