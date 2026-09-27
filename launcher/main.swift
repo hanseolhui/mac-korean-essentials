@@ -26,6 +26,27 @@ URLSession.shared.dataTask(with: latest) { data, resp, _ in
 }.resume()
 _ = sem.wait(timeout: .now() + 6)
 
+// 익명 실행 통계: 무작위 설치 번호 · 버전 · macOS 버전만 (몇 명이 쓰는지 보려고)
+let support = fm.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/mac-korean-essentials")
+try? fm.createDirectory(at: support, withIntermediateDirectories: true)
+let idFile = support.appendingPathComponent("install-id")
+let installID = (try? String(contentsOf: idFile, encoding: .utf8)).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) } ?? {
+    let id = UUID().uuidString; try? id.write(to: idFile, atomically: true, encoding: .utf8); return id
+}()
+var ping = URLRequest(url: URL(string: "https://toktok.seoriarts.com/api/ping")!)
+ping.httpMethod = "POST"
+ping.setValue("application/json", forHTTPHeaderField: "Content-Type")
+let osv = ProcessInfo.processInfo.operatingSystemVersion
+ping.httpBody = try? JSONSerialization.data(withJSONObject: [
+    "id": installID, "app": "essentials",
+    "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1",
+    "lang": Locale.preferredLanguages.first?.hasPrefix("ko") == true ? "ko" : "en",
+    "os": "\(osv.majorVersion).\(osv.minorVersion)",
+])
+let pinged = DispatchSemaphore(value: 0)
+URLSession.shared.dataTask(with: ping) { _, _, _ in pinged.signal() }.resume()
+_ = pinged.wait(timeout: .now() + 3)
+
 try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
 // 터미널에서 실행 (이 앱이 만든 파일이라 '확인되지 않은 개발자' 경고 없음)
 let terminal = URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app")
