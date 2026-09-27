@@ -2,7 +2,7 @@
 
 **한국 사용자가 맥에서 반복해서 겪는 불편, 명령어 한 줄로 해결.**
 
-클리앙·블로그·애플 커뮤니티에서 **자주 올라오는 불만** 세 가지를 설치 한 번으로 해결합니다. 필요한 것만 골라서 적용하세요.
+클리앙·블로그·애플 커뮤니티에서 **자주 올라오는 불만**을 설치 한 번으로 해결합니다. 필요한 것만 골라서 적용하세요.
 
 ## 🚀 설치 (한 줄)
 
@@ -69,6 +69,15 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 맥은 한글을 자음·모음을 나눠서 저장하고(NFD), 윈도우는 완성된 글자로 저장해요(NFC). 맥에서는 둘 다 똑같이 보이지만, 윈도우는 나눠진 형태를 그대로 보여 줘서 `ㅎㅏㄴㄱㅡㄹ`처럼 보여요. 이 메뉴는 파일명을 윈도우 방식(NFC)으로 바꿔 줍니다.
 </details>
 
+### 4. 👆 톡톡 — 트랙패드로 뒤로/앞으로
+> BetterTouchTool의 TipTap 제스처가 좋았는데, 유료·라이선스 문제로 쓰기 어려움
+
+**→ 손가락 하나 대고 왼쪽을 톡 치면 뒤로, 오른쪽을 톡 치면 앞으로.** 무료·오픈소스 메뉴바 앱 [톡톡(TokTok)](https://github.com/hanseolhui/toktok)을 설치해요.
+
+- Safari, 크롬, Finder 등 ⌘[ / ⌘] 를 지원하는 곳이면 어디서나
+- 두 손가락 탭(우클릭), 스크롤, 드래그와 헷갈리지 않게 걸러 줘요
+- 내 맥에서 직접 빌드해서 설치 (Apple 개발 도구가 없으면 설치 창이 떠요)
+
 ---
 
 ## 📋 설치 과정
@@ -96,10 +105,16 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 |---|---|---|
 | 1 | Finder 빠른 동작 "한글 파일명 윈도우용으로 정리" 설치 (`~/Library/Services`) | 없음 |
 
+**👆 톡톡**
+
+| 단계 | 하는 일 | 내가 할 일 |
+|---|---|---|
+| 1 | 톡톡 소스를 받아 빌드, `~/Applications`에 설치, 로그인 시 자동 실행 | 처음이면 **손쉬운 사용** 권한 허용 |
+
 **처음 설치 시 권한 허용**
 1. **시스템 설정 → 일반 → 로그인 항목 및 확장 프로그램 → 드라이버 확장 프로그램** → Karabiner 켜기
 2. **시스템 설정 → 개인정보 보호 및 보안 → 입력 모니터링** → `karabiner_grabber` / `Karabiner-Core-Service` 켜기
-3. (마우스 선택 시) **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용** → LinearMouse 켜기
+3. (마우스·톡톡 선택 시) **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용** → LinearMouse / TokTok 켜기
 
 > Homebrew가 없으면 Karabiner 다운로드 페이지가 열려요. 설치 후 명령어를 다시 실행하세요.
 
@@ -148,6 +163,7 @@ Karabiner가 입력 소스를 직접 바꾸면 메뉴바만 바뀌고 현재 창
 - Karabiner-Elements 앱 제거 (앱 메뉴 → Uninstall)
 - 마우스: LinearMouse 메뉴바 아이콘 → 설정 초기화, 또는 LinearMouse 앱 삭제
 - 한글 파일명 메뉴: `~/Library/Services/한글 파일명 윈도우용으로 정리.workflow` 삭제
+- 톡톡: 메뉴바 아이콘 → 톡톡 종료 → `~/Applications/TokTok.app` 삭제
 
 ---
 

@@ -2,10 +2,11 @@
 # 맥 한국인 필수 설정 — https://github.com/hanseolhui/mac-korean-essentials
 # 포함: ① 오른쪽 ⌘ 한/영 전환  ② 마우스 휠 윈도우처럼 (트랙패드는 그대로)
 #       ③ Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
+#       ④ 톡톡: 트랙패드 TipTap으로 뒤로/앞으로 (https://github.com/hanseolhui/toktok)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 #
 # 테스트/자동화용 환경 변수:
-#   MODULES=hanyoung,mouse,filename  선택 창 없이 실행할 항목
+#   MODULES=hanyoung,mouse,filename,toktok  선택 창 없이 실행할 항목
 #   SKIP_SYSTEM=1           앱 설치·시스템 설정은 건너뛰고 설정 파일만 수정
 #   KARABINER_JSON, LINEARMOUSE_JSON, DEVICES_JSON, MOUSE_OPTS, SERVICES_DIR
 
@@ -61,8 +62,9 @@ if [ -z "${MODULES:-}" ]; then
 function run(){
   const app = Application.currentApplication(); app.includeStandardAdditions = true;
   const items = ['⌨️  오른쪽 ⌘로 한/영 전환', '🖱  마우스 휠 윈도우처럼 (트랙패드는 그대로)',
-                 '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)'];
-  const keys  = ['hanyoung', 'mouse', 'filename'];
+                 '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)',
+                 '👆  톡톡: 손가락 하나 대고 왼쪽 톡 = 뒤로, 오른쪽 톡 = 앞으로'];
+  const keys  = ['hanyoung', 'mouse', 'filename', 'toktok'];
   let r;
   try { r = app.chooseFromList(items, { withTitle:'맥 한국인 필수 설정',
         withPrompt:'적용할 항목을 고르세요. (⌘ 클릭으로 여러 개 선택)',
@@ -313,10 +315,31 @@ module_filename() {
   DONE_MSG="${DONE_MSG:-}\n • 윈도우로 보낼 파일·폴더를 Finder에서 우클릭 > 빠른 동작 > '한글 파일명 윈도우용으로 정리'\n   (메뉴가 안 보이면 시스템 설정 > 일반 > 로그인 항목 및 확장 프로그램 > Finder 에서 켜기)"
 }
 
+# ════════════════════════════════════════════════════
+#  ④ 톡톡 (트랙패드 TipTap 뒤로/앞으로)
+# ════════════════════════════════════════════════════
+module_toktok() {
+  echo; echo "━━━━━━━━ 👆  톡톡: 트랙패드로 뒤로/앞으로 ━━━━━━━━"
+  echo "  손가락 하나를 댄 채 왼쪽을 톡 치면 뒤로, 오른쪽을 톡 치면 앞으로 가요."
+  echo "  소스를 받아 이 맥에서 직접 빌드해 설치합니다."
+  title "톡톡 설치"
+  local script
+  script=$(curl -fsSL "https://raw.githubusercontent.com/hanseolhui/toktok/main/install.sh") \
+    || { warn "톡톡 설치 파일을 받지 못했어요. 인터넷 연결을 확인하고 다시 실행하세요."; return 1; }
+  if [ "$SKIP" = "1" ]; then
+    TOKTOK_NO_OPEN=1 bash -c "$script" || return 1
+  else
+    bash -c "$script" || return 1
+    pause "손쉬운 사용 권한을 허용했으면"
+  fi
+  DONE_MSG="${DONE_MSG:-}\n • 손가락 하나 대고 왼쪽/오른쪽을 톡 쳐서 뒤로/앞으로 가는지 확인 (메뉴바 손가락 아이콘)"
+}
+
 DONE_MSG=""
 has hanyoung && module_hanyoung
 has mouse    && module_mouse
 has filename && module_filename
+has toktok   && module_toktok
 
 echo
 echo "==============================================="
@@ -324,6 +347,6 @@ echo " 완료! 확인해 보세요:"
 printf "%b\n" "$DONE_MSG"
 echo
 echo " 안 되면: 시스템 설정 > 개인정보 보호 및 보안에서"
-echo "          입력 모니터링(Karabiner) / 손쉬운 사용(LinearMouse) 권한 확인"
+echo "          입력 모니터링(Karabiner) / 손쉬운 사용(LinearMouse, TokTok) 권한 확인"
 echo "==============================================="
 pause "창을 닫으려면"
