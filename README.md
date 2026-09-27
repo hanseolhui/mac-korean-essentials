@@ -70,13 +70,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 </details>
 
 ### 4. 👆 톡톡 — 트랙패드로 뒤로/앞으로
-> BetterTouchTool의 TipTap 제스처가 좋았는데, 유료·라이선스 문제로 쓰기 어려움
+> 맥에는 트랙패드로 뒤로/앞으로 가는 간단한 제스처가 없음
 
-**→ 손가락 하나 대고 왼쪽을 톡 치면 뒤로, 오른쪽을 톡 치면 앞으로.** 무료·오픈소스 메뉴바 앱 [톡톡(TokTok)](https://github.com/hanseolhui/toktok)을 설치해요.
+**→ 오른손 중지를 대고 검지를 톡 치면 뒤로, 검지를 대고 중지를 톡 치면 앞으로.** 무료·오픈소스 메뉴바 앱 [톡톡(TokTok)](https://github.com/hanseolhui/toktok)을 설치해요.
 
 - Safari, 크롬, Finder 등 ⌘[ / ⌘] 를 지원하는 곳이면 어디서나
 - 두 손가락 탭(우클릭), 스크롤, 드래그와 헷갈리지 않게 걸러 줘요
-- 내 맥에서 직접 빌드해서 설치 (Apple 개발 도구가 없으면 설치 창이 떠요)
+- 애플 공증을 받은 앱이라 받아서 바로 실행 (애플 실리콘 + 인텔)
 
 ### 5. ⚙️ 맥북 기본 설정 한 번에
 > 맥북을 처음 사면 다들 똑같이 설정 앱을 뒤지며 바꾸는 것들
@@ -136,7 +136,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 
 | 단계 | 하는 일 | 내가 할 일 |
 |---|---|---|
-| 1 | 톡톡 소스를 받아 빌드, `~/Applications`에 설치, 로그인 시 자동 실행 | 처음이면 **손쉬운 사용** 권한 허용 |
+| 1 | 공증된 톡톡 최신 버전을 받아 응용 프로그램 폴더에 설치, 로그인 시 자동 실행 | 처음이면 **손쉬운 사용** 권한 허용 |
 
 **처음 설치 시 권한 허용**
 1. **시스템 설정 → 일반 → 로그인 항목 및 확장 프로그램 → 드라이버 확장 프로그램** → Karabiner 켜기
@@ -190,7 +190,7 @@ Karabiner가 입력 소스를 직접 바꾸면 메뉴바만 바뀌고 현재 창
 - Karabiner-Elements 앱 제거 (앱 메뉴 → Uninstall)
 - 마우스: LinearMouse 메뉴바 아이콘 → 설정 초기화, 또는 LinearMouse 앱 삭제
 - 한글 파일명 메뉴: `~/Library/Services/한글 파일명 윈도우용으로 정리.workflow` 삭제
-- 톡톡: 메뉴바 아이콘 → 톡톡 종료 → `~/Applications/TokTok.app` 삭제
+- 톡톡: 메뉴바 아이콘 → 톡톡 종료 → 응용 프로그램 폴더의 `TokTok.app` 삭제
 - 기본 설정: `~/Library/Application Support/mac-korean-essentials/기본설정-되돌리기.command` 더블클릭
 
 ---

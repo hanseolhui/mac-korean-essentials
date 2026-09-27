@@ -64,7 +64,7 @@ function run(){
   const app = Application.currentApplication(); app.includeStandardAdditions = true;
   const items = ['⌨️  오른쪽 ⌘로 한/영 전환', '🖱  마우스 휠 윈도우처럼 (트랙패드는 그대로)',
                  '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)',
-                 '👆  톡톡: 손가락 하나 대고 왼쪽 톡 = 뒤로, 오른쪽 톡 = 앞으로',
+                 '👆  톡톡: 중지 대고 검지 톡 = 뒤로, 검지 대고 중지 톡 = 앞으로',
                  '⚙️  맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷)'];
   const keys  = ['hanyoung', 'mouse', 'filename', 'toktok', 'basics'];
   let r;
@@ -322,8 +322,8 @@ module_filename() {
 # ════════════════════════════════════════════════════
 module_toktok() {
   echo; echo "━━━━━━━━ 👆  톡톡: 트랙패드로 뒤로/앞으로 ━━━━━━━━"
-  echo "  손가락 하나를 댄 채 왼쪽을 톡 치면 뒤로, 오른쪽을 톡 치면 앞으로 가요."
-  echo "  소스를 받아 이 맥에서 직접 빌드해 설치합니다."
+  echo "  오른손 중지를 대고 검지를 톡: 뒤로 / 검지를 대고 중지를 톡: 앞으로"
+  echo "  애플 공증을 받은 톡톡 최신 버전을 받아 설치합니다."
   title "톡톡 설치"
   local script
   script=$(curl -fsSL "https://raw.githubusercontent.com/hanseolhui/toktok/main/install.sh") \
@@ -334,7 +334,7 @@ module_toktok() {
     bash -c "$script" || return 1
     pause "손쉬운 사용 권한을 허용했으면"
   fi
-  DONE_MSG="${DONE_MSG:-}\n • 손가락 하나 대고 왼쪽/오른쪽을 톡 쳐서 뒤로/앞으로 가는지 확인 (메뉴바 손가락 아이콘)"
+  DONE_MSG="${DONE_MSG:-}\n • 중지 대고 검지 톡(뒤로) / 검지 대고 중지 톡(앞으로) 확인 (메뉴바 V 손가락 아이콘)"
 }
 
 # ════════════════════════════════════════════════════
