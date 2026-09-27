@@ -2,7 +2,7 @@
 # 맥 한국인 필수 설정 — https://github.com/hanseolhui/mac-korean-essentials
 # 포함: ① 오른쪽 ⌘ 한/영 전환  ② 마우스 휠 윈도우처럼 (트랙패드는 그대로)
 #       ③ Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
-#       ④ 톡톡: 트랙패드 TipTap으로 뒤로/앞으로 (https://github.com/hanseolhui/toktok)
+#       ④ 톡톡: 트랙패드에 손가락을 대고 옆을 톡 → 뒤로/앞으로 (https://github.com/hanseolhui/toktok)
 #       ⑤ 맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷, 되돌리기 파일 생성)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 #
