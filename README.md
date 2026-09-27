@@ -72,7 +72,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 ### 4. 👆 톡톡 — 트랙패드로 뒤로/앞으로
 > 맥에는 트랙패드로 뒤로/앞으로 가는 간단한 제스처가 없음
 
-**→ 오른손 중지를 대고 검지를 톡 치면 뒤로, 검지를 대고 중지를 톡 치면 앞으로.** 무료·오픈소스 메뉴바 앱 [톡톡(TokTok)](https://github.com/hanseolhui/toktok)을 설치해요.
+**→ 오른손 중지를 대고 검지를 톡 치면 뒤로, 검지를 대고 중지를 톡 치면 앞으로.** 무료 메뉴바 앱 [톡톡(TokTok)](https://toktok.seoriarts.com)을 설치해요. (소스: [GitHub](https://github.com/hanseolhui/toktok))
 
 - Safari, 크롬, Finder 등 ⌘[ / ⌘] 를 지원하는 곳이면 어디서나
 - 두 손가락 탭(우클릭), 스크롤, 드래그와 헷갈리지 않게 걸러 줘요
