@@ -3,12 +3,13 @@
 # 포함: ① 오른쪽 ⌘ 한/영 전환  ② 마우스 휠 윈도우처럼 (트랙패드는 그대로)
 #       ③ Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
 #       ④ 톡톡: 트랙패드 TipTap으로 뒤로/앞으로 (https://github.com/hanseolhui/toktok)
+#       ⑤ 맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷, 되돌리기 파일 생성)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 #
 # 테스트/자동화용 환경 변수:
-#   MODULES=hanyoung,mouse,filename,toktok  선택 창 없이 실행할 항목
+#   MODULES=hanyoung,mouse,filename,toktok,basics  선택 창 없이 실행할 항목
 #   SKIP_SYSTEM=1           앱 설치·시스템 설정은 건너뛰고 설정 파일만 수정
-#   KARABINER_JSON, LINEARMOUSE_JSON, DEVICES_JSON, MOUSE_OPTS, SERVICES_DIR
+#   KARABINER_JSON, LINEARMOUSE_JSON, DEVICES_JSON, MOUSE_OPTS, SERVICES_DIR, BASICS_OPTS
 
 set -u
 KJSON="${KARABINER_JSON:-$HOME/.config/karabiner/karabiner.json}"
@@ -63,8 +64,9 @@ function run(){
   const app = Application.currentApplication(); app.includeStandardAdditions = true;
   const items = ['⌨️  오른쪽 ⌘로 한/영 전환', '🖱  마우스 휠 윈도우처럼 (트랙패드는 그대로)',
                  '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)',
-                 '👆  톡톡: 손가락 하나 대고 왼쪽 톡 = 뒤로, 오른쪽 톡 = 앞으로'];
-  const keys  = ['hanyoung', 'mouse', 'filename', 'toktok'];
+                 '👆  톡톡: 손가락 하나 대고 왼쪽 톡 = 뒤로, 오른쪽 톡 = 앞으로',
+                 '⚙️  맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷)'];
+  const keys  = ['hanyoung', 'mouse', 'filename', 'toktok', 'basics'];
   let r;
   try { r = app.chooseFromList(items, { withTitle:'맥 한국인 필수 설정',
         withPrompt:'적용할 항목을 고르세요. (⌘ 클릭으로 여러 개 선택)',
@@ -335,11 +337,126 @@ module_toktok() {
   DONE_MSG="${DONE_MSG:-}\n • 손가락 하나 대고 왼쪽/오른쪽을 톡 쳐서 뒤로/앞으로 가는지 확인 (메뉴바 손가락 아이콘)"
 }
 
+# ════════════════════════════════════════════════════
+#  ⑤ 맥북 기본 설정 (되돌리기 파일 생성)
+# ════════════════════════════════════════════════════
+RESTORE_DIR="$HOME/Library/Application Support/mac-korean-essentials"
+RESTORE="$RESTORE_DIR/기본설정-되돌리기.command"
+
+# 바꾸기 전 값을 되돌리기 파일에 기록 (처음 바꿀 때 한 번만 → 최초 원래 값 보존)
+remember() { # $1=-currentHost 또는 "" $2=도메인 $3=키
+  local host="$1" dom="$2" key="$3" t v flag
+  grep -qF "# key: $host $dom $key" "$RESTORE" 2>/dev/null && return
+  echo "# key: $host $dom $key" >> "$RESTORE"
+  if t=$(defaults $host read-type "$dom" "$key" 2>/dev/null); then
+    v=$(defaults $host read "$dom" "$key" 2>/dev/null)
+    case "${t#Type is }" in
+      boolean) flag=-bool; [ "$v" = "1" ] && v=true || v=false ;;
+      integer) flag=-int ;; float) flag=-float ;; string) flag=-string ;;
+      *) echo "# (복잡한 값이라 건너뜀)" >> "$RESTORE"; return ;;
+    esac
+    printf 'defaults %s write %q %q %s %q\n' "$host" "$dom" "$key" "$flag" "$v" >> "$RESTORE"
+  else
+    printf 'defaults %s delete %q %q 2>/dev/null\n' "$host" "$dom" "$key" >> "$RESTORE"
+  fi
+}
+setp() { # $1=host $2=도메인 $3=키 $4=타입 $5=값
+  remember "$1" "$2" "$3"
+  defaults $1 write "$2" "$3" "$4" "$5"
+}
+
+module_basics() {
+  echo; echo "━━━━━━━━ ⚙️  맥북 기본 설정 ━━━━━━━━"
+  local opts="${BASICS_OPTS:-}"
+  if [ -z "$opts" ]; then
+    opts=$(run_jxa <<'JS'
+function run(){
+  const app = Application.currentApplication(); app.includeStandardAdditions = true;
+  const items = [
+    '⌨️ 키 반복 빠르게, 반복 지연 짧게 (다시 로그인하면 적용)',
+    '⌨️ Tab 키로 모든 버튼 이동',
+    '⌨️ 자동 수정·자동 대문자·스마트 따옴표 끄기',
+    '📁 파일 확장자 항상 표시',
+    '📁 Finder 경로 막대·상태 막대 표시',
+    '📁 새 Finder 창을 ‘최근 항목’ 대신 다운로드 폴더로',
+    '📁 Finder 검색 범위를 ‘현재 폴더’로',
+    '🔋 메뉴바에 배터리 % 표시',
+    '📸 스크린샷을 바탕화면 대신 사진 > 스크린샷 폴더에 저장'];
+  const keys = ['keyrepeat','tabnav','autocorrect','extensions','pathbar','newwindow','searchscope','battery','screenshot'];
+  let r;
+  try { r = app.chooseFromList(items, { withTitle:'맥북 기본 설정',
+        withPrompt:'적용할 설정을 고르세요. (⌘ 클릭으로 선택 해제)\n원래대로 돌리는 파일도 함께 만들어 드려요.',
+        defaultItems: items, multipleSelectionsAllowed:true, emptySelectionAllowed:true }); }
+  catch(e) { r = false; }
+  return (r || []).map(x => keys[items.indexOf(x)]).join(',');
+}
+JS
+)
+  fi
+  [ -z "$opts" ] && { warn "선택한 설정이 없어 건너뜁니다."; return 0; }
+  on() { case ",$opts," in *",$1,"*) return 0;; esac; return 1; }
+
+  mkdir -p "$RESTORE_DIR"
+  if [ ! -f "$RESTORE" ]; then
+    cat > "$RESTORE" <<'EOF'
+#!/bin/bash
+# 맥 한국인 필수 설정 — 기본 설정을 처음 적용하기 전 상태로 되돌립니다. 더블클릭으로 실행하세요.
+EOF
+    chmod +x "$RESTORE"
+  fi
+  # 되돌리기 명령은 마지막에 한 번 덧붙임 (재실행 시 중복 제거)
+  sed -i '' '/^# --- 마무리 ---$/,$d' "$RESTORE"
+
+  title "설정 적용"
+  local G=NSGlobalDomain F=com.apple.finder
+  if on keyrepeat; then
+    setp "" $G KeyRepeat -int 2; setp "" $G InitialKeyRepeat -int 15
+    ok "키 반복 빠르게 · 반복 지연 짧게 (다시 로그인하면 적용)"
+  fi
+  if on tabnav; then setp "" $G AppleKeyboardUIMode -int 2; ok "Tab 키로 모든 버튼 이동"; fi
+  if on autocorrect; then
+    setp "" $G NSAutomaticSpellingCorrectionEnabled -bool false
+    setp "" $G WebAutomaticSpellingCorrectionEnabled -bool false
+    setp "" $G NSAutomaticCapitalizationEnabled -bool false
+    setp "" $G NSAutomaticQuoteSubstitutionEnabled -bool false
+    ok "자동 수정 · 자동 대문자 · 스마트 따옴표 끔"
+  fi
+  if on extensions; then setp "" $G AppleShowAllExtensions -bool true; ok "파일 확장자 항상 표시"; fi
+  if on pathbar; then setp "" $F ShowPathbar -bool true; setp "" $F ShowStatusBar -bool true; ok "경로 막대 · 상태 막대 표시"; fi
+  if on newwindow; then
+    setp "" $F NewWindowTarget -string PfLo
+    setp "" $F NewWindowTargetPath -string "file://$HOME/Downloads/"
+    ok "새 Finder 창 = 다운로드 폴더"
+  fi
+  if on searchscope; then setp "" $F FXDefaultSearchScope -string SCcf; ok "Finder 검색 범위 = 현재 폴더"; fi
+  if on battery; then setp -currentHost com.apple.controlcenter BatteryShowPercentage -bool true; ok "메뉴바 배터리 % 표시"; fi
+  if on screenshot; then
+    local shots="$HOME/Pictures/스크린샷"
+    mkdir -p "$shots"
+    setp "" com.apple.screencapture location -string "$shots"
+    ok "스크린샷 저장 위치 = 사진 > 스크린샷"
+  fi
+
+  cat >> "$RESTORE" <<'EOF'
+# --- 마무리 ---
+killall Finder SystemUIServer ControlCenter 2>/dev/null
+echo "원래 설정으로 되돌렸어요. 키보드 설정은 다시 로그인하면 적용돼요."
+EOF
+
+  if [ "$SKIP" != "1" ]; then
+    killall Finder SystemUIServer ControlCenter 2>/dev/null
+    /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1
+  fi
+  ok "되돌리기 파일: ~/Library/Application Support/mac-korean-essentials/기본설정-되돌리기.command"
+  DONE_MSG="${DONE_MSG:-}\n • 기본 설정 적용 완료 (키보드 반복 속도는 다시 로그인하면 적용)\n   원래대로: ~/Library/Application Support/mac-korean-essentials/기본설정-되돌리기.command 더블클릭"
+}
+
 DONE_MSG=""
 has hanyoung && module_hanyoung
 has mouse    && module_mouse
 has filename && module_filename
 has toktok   && module_toktok
+has basics   && module_basics
 
 echo
 echo "==============================================="
