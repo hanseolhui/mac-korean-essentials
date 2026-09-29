@@ -26,8 +26,8 @@ cat > "$APP/Contents/Info.plist" <<PL
   <key>CFBundleIdentifier</key><string>com.seoriarts.mac-korean-essentials</string>
   <key>CFBundleExecutable</key><string>MacKoreanEssentials</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0.2</string>
-  <key>CFBundleVersion</key><string>3</string>
+  <key>CFBundleShortVersionString</key><string>1.0.3</string>
+  <key>CFBundleVersion</key><string>4</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>LSUIElement</key><true/>
