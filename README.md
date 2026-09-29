@@ -144,8 +144,6 @@ Karabiner가 입력 소스를 직접 바꾸면 메뉴바만 바뀌고 현재 창
 변경되는 파일: `~/.config/karabiner/karabiner.json` (백업: 같은 폴더 `karabiner.backup-날짜.json`), macOS 키보드 단축키 설정.
 
 ```
-마우스 휠 ──LinearMouse (마우스일 때만)──▶ 방향 반전 · 한 칸 3줄
-트랙패드 ─────────────────────────────▶ 그대로 (맥 기본)
 ```
 
 변경되는 파일: `~/.config/linearmouse/linearmouse.json` (백업: 같은 폴더).
