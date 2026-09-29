@@ -1,15 +1,15 @@
 #!/bin/bash
 # 맥 한국인 필수 설정 — https://github.com/hanseolhui/mac-korean-essentials
-# 포함: ① 오른쪽 ⌘ 한/영 전환  ② 마우스 휠 윈도우처럼 (트랙패드는 그대로)
-#       ③ Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
-#       ④ 톡톡: 트랙패드에 손가락을 대고 옆을 톡 → 뒤로/앞으로 (https://github.com/hanseolhui/toktok)
-#       ⑤ 맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷, 되돌리기 파일 생성)
+# 포함: ① 오른쪽 ⌘ 한/영 전환
+#       ② Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
+#       ③ 맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷, 되돌리기 파일 생성)
+# 마우스는 콕콕, 트랙패드는 톡톡 앱으로 따로 (https://toktok.seoriarts.com)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 #
 # 테스트/자동화용 환경 변수:
-#   MODULES=hanyoung,mouse,filename,toktok,basics  선택 창 없이 실행할 항목
+#   MODULES=hanyoung,filename,basics  선택 창 없이 실행할 항목
 #   SKIP_SYSTEM=1           앱 설치·시스템 설정은 건너뛰고 설정 파일만 수정
-#   KARABINER_JSON, LINEARMOUSE_JSON, DEVICES_JSON, MOUSE_OPTS, SERVICES_DIR, BASICS_OPTS
+#   KARABINER_JSON, DEVICES_JSON, SERVICES_DIR, BASICS_OPTS
 
 set -u
 KJSON="${KARABINER_JSON:-$HOME/.config/karabiner/karabiner.json}"
@@ -17,8 +17,6 @@ KAPP="/Applications/Karabiner-Elements.app"
 KCLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 KLOG="/var/log/karabiner/core_service.log"
 RULE_DESC="[한영키] Right Command alone -> F18 (macOS input source toggle)"
-LMJSON="${LINEARMOUSE_JSON:-$HOME/.config/linearmouse/linearmouse.json}"
-LMAPP="/Applications/LinearMouse.app"
 SKIP="${SKIP_SYSTEM:-0}"
 RAW="https://raw.githubusercontent.com/hanseolhui/mac-korean-essentials/main"
 SERVICES="${SERVICES_DIR:-$HOME/Library/Services}"
@@ -62,11 +60,10 @@ if [ -z "${MODULES:-}" ]; then
   MODULES=$(run_jxa <<'JS'
 function run(){
   const app = Application.currentApplication(); app.includeStandardAdditions = true;
-  const items = ['⌨️  오른쪽 ⌘로 한/영 전환', '🖱  마우스 휠 윈도우처럼 (트랙패드는 그대로)',
+  const items = ['⌨️  오른쪽 ⌘로 한/영 전환',
                  '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)',
-                 '👆  톡톡: 중지 대고 검지 톡 = 뒤로, 검지 대고 중지 톡 = 앞으로',
                  '⚙️  맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷)'];
-  const keys  = ['hanyoung', 'mouse', 'filename', 'toktok', 'basics'];
+  const keys  = ['hanyoung', 'filename', 'basics'];
   let r;
   try { r = app.chooseFromList(items, { withTitle:'맥 한국인 필수 설정',
         withPrompt:'적용할 항목을 고르세요. (⌘ 클릭으로 여러 개 선택)',
@@ -199,98 +196,7 @@ JS
 }
 
 # ════════════════════════════════════════════════════
-#  ② 마우스 휠 윈도우처럼 (LinearMouse)
-# ════════════════════════════════════════════════════
-module_mouse() {
-  echo; echo "━━━━━━━━ 🖱  마우스 휠 윈도우처럼 ━━━━━━━━"
-  echo "  macOS는 트랙패드와 마우스의 스크롤 방향을 따로 설정할 수 없어요."
-  echo "  무료 오픈소스 앱 LinearMouse로 '마우스만' 윈도우처럼 바꿉니다."
-
-  # 자연스러운 스크롤(트랙패드 기준)이 켜져 있어야 '마우스만 반대로'가 성립
-  local natural
-  natural=$(defaults read -g com.apple.swipescrolldirection 2>/dev/null || echo 1)
-
-  local opts="${MOUSE_OPTS:-}"
-  if [ -z "$opts" ]; then
-    opts=$(run_jxa <<'JS'
-function run(){
-  const app = Application.currentApplication(); app.includeStandardAdditions = true;
-  const items = ['휠 방향을 윈도우처럼 (아래로 굴리면 아래로)',
-                 '휠 한 칸 = 3줄, 가속 없이 일정하게 (윈도우 기본값)',
-                 '마우스 포인터 가속 끄기 (움직인 만큼만 이동, 게임·디자인용)'];
-  const keys = ['reverse','lines','nopointeraccel'];
-  let r;
-  try { r = app.chooseFromList(items, { withTitle:'마우스 설정', withPrompt:'마우스에 적용할 설정을 고르세요. (트랙패드는 바뀌지 않아요)',
-        defaultItems: items.slice(0,2), multipleSelectionsAllowed:true, emptySelectionAllowed:true }); }
-  catch(e) { r = false; }
-  return (r || []).map(x => keys[items.indexOf(x)]).join(',');
-}
-JS
-)
-  fi
-  [ -z "$opts" ] && { warn "선택한 마우스 설정이 없어 건너뜁니다."; return 0; }
-
-  if [ "$SKIP" != "1" ]; then
-    title "LinearMouse 확인"
-    install_cask linearmouse "$LMAPP" "LinearMouse" "https://linearmouse.app" || return 1
-    if [ -d "/Applications/logioptionsplus.app" ] || [ -d "/Applications/Logi Options+.app" ]; then
-      warn "Logi Options+ 가 설치되어 있어요. Logi Options+ 의 '스크롤 방향'/'부드러운 스크롤'이 켜져 있으면"
-      warn "LinearMouse 와 겹칠 수 있으니, 이상하면 Logi Options+ 쪽 스크롤 설정을 기본값으로 두세요."
-    fi
-  fi
-
-  title "마우스 설정 적용"
-  mkdir -p "$(dirname "$LMJSON")"; backup "$LMJSON"
-  local result
-  result=$(run_jxa "$LMJSON" "$opts" "$natural" <<'JS'
-ObjC.import('Foundation');
-function readText(p){ const s=$.NSString.stringWithContentsOfFileEncodingError(p,$.NSUTF8StringEncoding,null); return s.isNil()?null:ObjC.unwrap(s); }
-function writeText(p,t){ $(t).writeToFileAtomicallyEncodingError(p,true,$.NSUTF8StringEncoding,null); }
-function run(argv){
-  const [path, optsStr, natural] = argv; const opts = optsStr.split(',');
-  const raw = readText(path);
-  const c = raw && raw.trim() ? JSON.parse(raw) : {};
-  c['$schema'] = c['$schema'] || 'https://app.linearmouse.org/schema/0.11.4';
-  c.schemes = c.schemes || [];
-  // "모든 마우스" 스킴을 찾아 갱신 (없으면 추가)
-  const isMouseOnly = s => s.if && !Array.isArray(s.if) && JSON.stringify(s.if) === JSON.stringify({device:{category:'mouse'}});
-  let s = c.schemes.find(isMouseOnly);
-  if (!s) { s = {if:{device:{category:'mouse'}}}; c.schemes.push(s); }
-  s.scrolling = s.scrolling || {};
-  // 시스템의 '자연스러운 스크롤'이 켜져 있으면(기본값) 마우스만 뒤집어 윈도우 방향으로
-  if (opts.includes('reverse')) s.scrolling.reverse = { vertical: natural !== '0', horizontal: natural !== '0' };
-  if (opts.includes('lines'))   s.scrolling.distance = { vertical: '3' };
-  if (opts.includes('nopointeraccel')) { s.pointer = s.pointer || {}; s.pointer.disableAcceleration = true; }
-  writeText(path, JSON.stringify(c, null, 2));
-  return 'ok';
-}
-JS
-)
-  [ "$result" = "ok" ] || { warn "설정 파일 수정 실패: $result"; return 1; }
-  case ",$opts," in *",reverse,"*) ok "마우스 휠 방향: 윈도우처럼";; esac
-  case ",$opts," in *",lines,"*)   ok "마우스 휠 한 칸 = 3줄";; esac
-  case ",$opts," in *",nopointeraccel,"*) ok "마우스 포인터 가속 끔";; esac
-  if [ "$natural" = "0" ]; then
-    warn "지금 '자연스러운 스크롤'이 꺼져 있어서 트랙패드도 윈도우 방향이에요."
-    warn "트랙패드를 맥 기본 방향으로 쓰려면: 시스템 설정 > 트랙패드 > 스크롤 및 확대/축소 > '자연스러운 스크롤' 켠 뒤 다시 실행하세요."
-  fi
-
-  if [ "$SKIP" != "1" ]; then
-    osascript -e 'tell application "LinearMouse" to quit' >/dev/null 2>&1; sleep 1
-    open -a "LinearMouse"
-    osascript -e 'tell application "System Events" to if not (exists login item "LinearMouse") then make login item at end with properties {path:"/Applications/LinearMouse.app", hidden:true}' >/dev/null 2>&1 \
-      && ok "로그인 시 LinearMouse 자동 실행" \
-      || warn "자동 실행 등록 실패 — LinearMouse 메뉴바 아이콘 > 'Start at login'을 켜 주세요."
-    echo
-    echo "  처음이면 LinearMouse가 '손쉬운 사용' 권한을 요청해요:"
-    echo "   • 시스템 설정 > 개인정보 보호 및 보안 > 손쉬운 사용 > LinearMouse 켜기"
-    pause "허용했으면"
-  fi
-  DONE_MSG="${DONE_MSG:-}\n • 마우스 휠을 굴려 윈도우처럼 움직이는지 확인 (트랙패드는 그대로)"
-}
-
-# ════════════════════════════════════════════════════
-#  ③ 한글 파일명 자소 분리 해결 (Finder 빠른 동작)
+#  ② 한글 파일명 자소 분리 해결 (Finder 빠른 동작)
 # ════════════════════════════════════════════════════
 module_filename() {
   echo; echo "━━━━━━━━ 📁  한글 파일명 윈도우용으로 정리 ━━━━━━━━"
@@ -318,27 +224,7 @@ module_filename() {
 }
 
 # ════════════════════════════════════════════════════
-#  ④ 톡톡 (트랙패드 TipTap 뒤로/앞으로)
-# ════════════════════════════════════════════════════
-module_toktok() {
-  echo; echo "━━━━━━━━ 👆  톡톡: 트랙패드로 뒤로/앞으로 ━━━━━━━━"
-  echo "  오른손 중지를 대고 검지를 톡: 뒤로 / 검지를 대고 중지를 톡: 앞으로"
-  echo "  애플 공증을 받은 톡톡 최신 버전을 받아 설치합니다."
-  title "톡톡 설치"
-  local script
-  script=$(curl -fsSL "https://raw.githubusercontent.com/hanseolhui/toktok/main/install.sh") \
-    || { warn "톡톡 설치 파일을 받지 못했어요. 인터넷 연결을 확인하고 다시 실행하세요."; return 1; }
-  if [ "$SKIP" = "1" ]; then
-    TOKTOK_NO_OPEN=1 bash -c "$script" || return 1
-  else
-    bash -c "$script" || return 1
-    pause "손쉬운 사용 권한을 허용했으면"
-  fi
-  DONE_MSG="${DONE_MSG:-}\n • 중지 대고 검지 톡(뒤로) / 검지 대고 중지 톡(앞으로) 확인 (메뉴바 V 손가락 아이콘)"
-}
-
-# ════════════════════════════════════════════════════
-#  ⑤ 맥북 기본 설정 (되돌리기 파일 생성)
+#  ③ 맥북 기본 설정 (되돌리기 파일 생성)
 # ════════════════════════════════════════════════════
 RESTORE_DIR="$HOME/Library/Application Support/mac-korean-essentials"
 RESTORE="$RESTORE_DIR/기본설정-되돌리기.command"
@@ -453,9 +339,7 @@ EOF
 
 DONE_MSG=""
 has hanyoung && module_hanyoung
-has mouse    && module_mouse
 has filename && module_filename
-has toktok   && module_toktok
 has basics   && module_basics
 
 echo
@@ -464,6 +348,9 @@ echo " 완료! 확인해 보세요:"
 printf "%b\n" "$DONE_MSG"
 echo
 echo " 안 되면: 시스템 설정 > 개인정보 보호 및 보안에서"
-echo "          입력 모니터링(Karabiner) / 손쉬운 사용(LinearMouse, TokTok) 권한 확인"
+echo "          입력 모니터링(Karabiner) 권한 확인"
+echo
+echo " 마우스 버튼·휠은 콕콕, 트랙패드 제스처는 톡톡 앱으로 따로 설정해요"
+echo "   → https://toktok.seoriarts.com"
 echo "==============================================="
 pause "창을 닫으려면"
