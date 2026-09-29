@@ -12,6 +12,10 @@ if let res = Bundle.main.resourceURL {
         let src = res.appendingPathComponent(name)
         if fm.fileExists(atPath: src.path) { try? fm.copyItem(at: src, to: work.appendingPathComponent(name)) }
     }
+    // 앱 안에서는 영문 이름 → 설치기가 찾는 한글 이름으로
+    let qa = work.appendingPathComponent("quick-actions")
+    let en = qa.appendingPathComponent("hangul-filename.workflow")
+    if fm.fileExists(atPath: en.path) { try? fm.moveItem(at: en, to: qa.appendingPathComponent("한글 파일명 윈도우용으로 정리.workflow")) }
 }
 let script = work.appendingPathComponent("install.command")
 
