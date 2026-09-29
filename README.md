@@ -31,17 +31,17 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 
 ## ✅ 해결하는 것
 
-> 마우스 버튼·휠은 **콕콕**, 트랙패드 제스처는 **톡톡** 앱으로 따로 설정해요 → [toktok.seoriarts.com](https://toktok.seoriarts.com)
+> 마우스 버튼·휠은 **콕콕**, 트랙패드 제스처는 **톡톡** 앱으로 따로 설정해요 → [apps.seoriarts.com](https://apps.seoriarts.com)
 
 ### 1. 한/영 전환이 느리거나 영문이 섞여 입력됨
 > 한/영을 바꾸자마자 치면 앞 글자가 영문으로 섞여 들어감
 
 **→ 오른쪽 ⌘(Command)를 윈도우처럼 한/영 키로.**
 
-- 오른쪽 ⌘를 **혼자 누르면** 한/영 전환, **누르자마자 바로 반영**
-- 오른쪽 ⌘ + 다른 키는 원래대로 (⌘C, ⌘V, ⌘Tab 그대로)
-- 한국어 자판 키보드의 **[한/영] 키**도 같은 동작
-- **블루투스 외장 키보드** 지원 (설치 중 목록에서 선택)
+- 오른쪽 ⌘를 누르면 한/영 전환, **누르자마자 바로 반영**
+- **앱 설치 · 권한 허용 없이** macOS 기본 기능(`hidutil`)만 사용
+- 오른쪽 ⌘는 한/영 전용이 돼요 (⌘C · ⌘V 등은 왼쪽 ⌘로)
+- **블루투스 · 외장 키보드**도 똑같이 적용
 
 ### 2. 한글 파일명이 윈도우에서 `ㅎㅏㄴㄱㅡㄹ`로 풀어져 보임
 > 맥에서 보낸 파일·압축 파일을 윈도우에서 열면 한글 파일명의 자음·모음이 전부 분리됨
@@ -91,10 +91,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 
 | 단계 | 하는 일 | 내가 할 일 |
 |---|---|---|
-| 1 | [Karabiner-Elements](https://karabiner-elements.pqrs.org) 확인·설치 (Homebrew 사용) | 처음이면 **권한 허용** (아래) |
-| 2 | macOS 단축키 "입력 메뉴에서 다음 소스 선택" = F18 | 없음 |
-| 3 | 연결된 외장 키보드 확인 | 목록에서 **키보드만** 선택 (마우스 제외) |
-| 4 | 규칙 적용 (오른쪽 ⌘ 단독 → F18) | 없음 |
+| 1 | macOS 단축키 "입력 메뉴에서 다음 소스 선택" = F18 | 없음 |
+| 2 | 오른쪽 ⌘ → F18 (지금 바로 · 로그인할 때마다 자동 적용) | 없음 |
 
 **📁 한글 파일명 정리**
 
@@ -109,27 +107,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 | 1 | 적용할 설정 선택 (기본은 전부 선택) | 필요 없는 것만 해제 |
 | 2 | 원래 값을 되돌리기 파일에 기록한 뒤 적용, Finder·메뉴바 새로고침 | 없음 |
 
-**처음 설치 시 권한 허용**
-1. **시스템 설정 → 일반 → 로그인 항목 및 확장 프로그램 → 드라이버 확장 프로그램** → Karabiner 켜기
-2. **시스템 설정 → 개인정보 보호 및 보안 → 입력 모니터링** → `karabiner_grabber` / `Karabiner-Core-Service` 켜기
-
-> Homebrew가 없으면 Karabiner 다운로드 페이지가 열려요. 설치 후 명령어를 다시 실행하세요.
-
 ---
 
 ## ❓ 문제 해결
 
-**갑자기 안 돼요 (특히 macOS 업데이트 후)**
-→ 입력 모니터링 권한이 풀린 경우가 대부분. 시스템 설정 → 개인정보 보호 및 보안 → 입력 모니터링에서 Karabiner 항목을 껐다 켜세요.
-
-**외장 키보드에서만 안 돼요**
-→ 설치 명령을 다시 실행하고 목록에서 그 키보드를 선택하세요. 일부 블루투스 키보드는 "키보드 + 포인팅 장치"로 인식되어 Karabiner가 기본적으로 건드리지 않아요.
+**갑자기 안 돼요**
+→ 설치기를 다시 실행하세요. 로그인할 때 자동으로 다시 적용되게 되어 있어요 (`~/Library/LaunchAgents/com.seoriarts.hanyoung.plist`).
 
 **한/영 말고 다른 언어로도 바뀌어요**
 → 입력 소스를 **ABC + 한국어 2벌식** 두 개만 남겨 두세요 (시스템 설정 → 키보드 → 입력 소스).
 
 **전환은 되는데 반영이 늦어요**
-→ 이 설치기는 macOS 기본 단축키(F18)를 거쳐 전환해서 바로 반영돼요. 예전에 Karabiner의 `select_input_source`나 `enable_cgeventtap_fallback`을 직접 설정했다면 설치기가 정리해 줍니다.
+→ 이 설치기는 macOS 기본 단축키(F18)를 거쳐 전환해서 바로 반영돼요. 예전에 이 설치기로 Karabiner 규칙을 넣었다면 다시 실행할 때 그 규칙은 빼 줘요.
 
 **우클릭 메뉴에 "한글 파일명 윈도우용으로 정리"가 안 보여요**
 → 시스템 설정 → 일반 → 로그인 항목 및 확장 프로그램 → **Finder**(또는 "빠른 동작")에서 켜 주세요. Finder를 다시 열면(⌥ + 우클릭 Dock의 Finder → 다시 실행) 바로 나타나요.
@@ -137,23 +126,16 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 ## 🔧 작동 원리
 
 ```
-오른쪽 ⌘ (단독) ──Karabiner──▶ F18 ──macOS 단축키──▶ 다음 입력 소스 (한 ⇄ A)
+오른쪽 ⌘ ──hidutil (macOS 기본)──▶ F18 ──macOS 단축키──▶ 다음 입력 소스 (한 ⇄ A)
 ```
 
-Karabiner가 입력 소스를 직접 바꾸면 메뉴바만 바뀌고 현재 창엔 늦게 반영되는 문제가 있어, macOS 단축키로 넘겨 **즉시 반영**되게 했어요.
-변경되는 파일: `~/.config/karabiner/karabiner.json` (백업: 같은 폴더 `karabiner.backup-날짜.json`), macOS 키보드 단축키 설정.
-
-```
-```
-
-변경되는 파일: `~/.config/linearmouse/linearmouse.json` (백업: 같은 폴더).
+입력 소스를 직접 바꾸면 메뉴바만 바뀌고 현재 창엔 늦게 반영되는 문제가 있어, macOS 단축키로 넘겨 **즉시 반영**되게 했어요.
+변경되는 것: 키 바꾸기(`hidutil`, 재부팅하면 풀려서 LaunchAgent 가 로그인할 때 다시 적용), macOS 키보드 단축키 설정.
 
 ## 🗑 되돌리기
 
-- Karabiner-Elements 앱 → **Complex Modifications**에서 `[한영키]` 규칙 삭제, 또는
-- `~/.config/karabiner/`의 백업 파일로 `karabiner.json` 교체, 또는
-- Karabiner-Elements 앱 제거 (앱 메뉴 → Uninstall)
-- 마우스: LinearMouse 메뉴바 아이콘 → 설정 초기화, 또는 LinearMouse 앱 삭제
+- 한/영 키: `~/Library/Application Support/mac-korean-essentials/한영키-되돌리기.command` 더블클릭
+- 예전 버전으로 설치한 Karabiner · LinearMouse 는 각 앱을 지우면 돼요
 - 한글 파일명 메뉴: `~/Library/Services/한글 파일명 윈도우용으로 정리.workflow` 삭제
 - 톡톡: 메뉴바 아이콘 → 톡톡 종료 → 응용 프로그램 폴더의 `TokTok.app` 삭제
 - 기본 설정: `~/Library/Application Support/mac-korean-essentials/기본설정-되돌리기.command` 더블클릭

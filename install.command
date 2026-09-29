@@ -3,11 +3,13 @@
 # 포함: ① 오른쪽 ⌘ 한/영 전환
 #       ② Finder 우클릭 '한글 파일명 윈도우용으로 정리' (자소 분리 해결)
 #       ③ 맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷, 되돌리기 파일 생성)
-# 마우스는 콕콕, 트랙패드는 톡톡 앱으로 따로 (https://toktok.seoriarts.com)
+# 마우스는 콕콕, 트랙패드는 톡톡 앱으로 따로 (https://apps.seoriarts.com)
 # 더블클릭으로 실행하세요. 다시 실행해도 안전합니다(중복 적용 안 됨).
 #
 # 테스트/자동화용 환경 변수:
 #   MODULES=hanyoung,filename,basics  선택 창 없이 실행할 항목
+#   HANYOUNG_METHOD=karabiner  예전 Karabiner 방식 (기본은 앱 설치 없는 native)
+#   LAUNCH_AGENTS_DIR       LaunchAgent 를 둘 곳 (시험용)
 #   SKIP_SYSTEM=1           앱 설치·시스템 설정은 건너뛰고 설정 파일만 수정
 #   KARABINER_JSON, DEVICES_JSON, SERVICES_DIR, BASICS_OPTS
 
@@ -78,12 +80,81 @@ fi
 has() { case ",$MODULES," in *",$1,"*) return 0;; esac; return 1; }
 
 # ════════════════════════════════════════════════════
-#  ① 오른쪽 ⌘ 한/영 전환 (Karabiner-Elements)
+#  ① 오른쪽 ⌘ 한/영 전환 (기본: 앱 설치 없이 hidutil · 선택: Karabiner-Elements)
 # ════════════════════════════════════════════════════
+# macOS 입력 소스 전환 단축키: '입력 메뉴에서 다음 소스 선택' = F18 (두 방식 공통)
+set_f18_hotkey() {
+  title "macOS 입력 소스 전환 단축키(F18) 설정"
+  defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 61 \
+    "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
+  /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1
+  ok "'입력 메뉴에서 다음 소스 선택' = F18"
+  if defaults read com.apple.HIToolbox AppleEnabledInputSources 2>/dev/null | grep -q "inputmethod.Korean"; then
+    ok "한국어 입력기 확인"
+  else
+    warn "한국어 입력기가 없어요. 시스템 설정 > 키보드 > 입력 소스에서 '한국어 - 2벌식'을 추가하세요."
+  fi
+}
+
+# 앱 설치 없이: macOS 기본 hidutil 로 오른쪽 ⌘ → F18 (권한 · 드라이버 필요 없음)
+# 재부팅하면 풀려서 로그인할 때마다 다시 적용하는 LaunchAgent 를 둠
+HY_LABEL="com.seoriarts.hanyoung"
+HY_MAP='{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x7000000E7,"HIDKeyboardModifierMappingDst":0x70000006D}]}'
+hanyoung_native() {
+  local agents="${LAUNCH_AGENTS_DIR:-$HOME/Library/LaunchAgents}" support="$HOME/Library/Application Support/mac-korean-essentials"
+  [ "$SKIP" = "1" ] || set_f18_hotkey
+  title "오른쪽 ⌘ → 한/영 키 (앱 설치 없이)"
+  mkdir -p "$agents"
+  cat > "$agents/$HY_LABEL.plist" <<PL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$HY_LABEL</string>
+  <key>ProgramArguments</key><array><string>/usr/bin/hidutil</string><string>property</string><string>--set</string><string>$HY_MAP</string></array>
+  <key>RunAtLoad</key><true/>
+</dict></plist>
+PL
+  ok "로그인할 때마다 자동으로 적용"
+  if [ "$SKIP" != "1" ]; then
+    /usr/bin/hidutil property --set "$HY_MAP" >/dev/null && ok "지금 바로 적용 (오른쪽 ⌘ = 한/영)"
+    launchctl bootout "gui/$(id -u)/$HY_LABEL" >/dev/null 2>&1
+    launchctl bootstrap "gui/$(id -u)" "$agents/$HY_LABEL.plist" >/dev/null 2>&1
+    # 예전에 Karabiner 로 설치했다면: 우리 규칙만 빼서 겹치지 않게 (Karabiner 앱 자체는 그대로)
+    if [ -f "$KJSON" ] && grep -q "\[한영키\]" "$KJSON"; then
+      backup "$KJSON"
+      run_jxa "$KJSON" <<'JS' >/dev/null
+ObjC.import('Foundation');
+function run(argv){ const p=argv[0]; const s=$.NSString.stringWithContentsOfFileEncodingError(p,$.NSUTF8StringEncoding,null); if(s.isNil()) return '';
+  const c=JSON.parse(ObjC.unwrap(s)); (c.profiles||[]).forEach(pr=>{ const cm=pr.complex_modifications; if(cm&&cm.rules) cm.rules=cm.rules.filter(r=>!(r.description||'').startsWith('[한영키]')); });
+  $(JSON.stringify(c,null,4)).writeToFileAtomicallyEncodingError(p,true,$.NSUTF8StringEncoding,null); return 'ok'; }
+JS
+      ok "예전에 설치한 Karabiner 한/영 규칙은 뺐어요 (Karabiner 앱은 지워도 돼요)"
+    fi
+  fi
+  # 되돌리기 파일
+  mkdir -p "$support"
+  cat > "$support/한영키-되돌리기.command" <<RV
+#!/bin/bash
+# 오른쪽 ⌘ 한/영 키를 원래 ⌘ 로 되돌리기
+launchctl bootout "gui/\$(id -u)/$HY_LABEL" >/dev/null 2>&1
+rm -f "$agents/$HY_LABEL.plist"
+/usr/bin/hidutil property --set '{"UserKeyMapping":[]}' >/dev/null
+echo "오른쪽 ⌘ 를 원래대로 돌렸어요. 이 창은 닫아도 돼요."
+RV
+  chmod +x "$support/한영키-되돌리기.command"
+  DONE_MSG="${DONE_MSG:-}\n • 오른쪽 ⌘를 한 번 눌러 한/영이 바뀌는지 확인 (외장 키보드도 똑같이 돼요)\n   되돌리기: ~/Library/Application Support/mac-korean-essentials/한영키-되돌리기.command"
+}
+
 module_hanyoung() {
   echo; echo "━━━━━━━━ ⌨️  오른쪽 ⌘ 한/영 전환 ━━━━━━━━"
+  # 앱 설치 없는 방식만 씀 (예전 Karabiner 방식은 HANYOUNG_METHOD=karabiner 로만 · 안내하지 않음)
+  local method="${HANYOUNG_METHOD:-native}"
+  [ "$method" = "karabiner" ] || { hanyoung_native; return; }
 
   if [ "$SKIP" != "1" ]; then
+    # Karabiner 로 바꾸면 앱 설치 없는 방식은 꺼 둠 (겹치지 않게)
+    launchctl bootout "gui/$(id -u)/$HY_LABEL" >/dev/null 2>&1; rm -f "$HOME/Library/LaunchAgents/$HY_LABEL.plist"
+    /usr/bin/hidutil property --set '{"UserKeyMapping":[]}' >/dev/null 2>&1
     title "Karabiner-Elements 확인"
     local fresh=0
     [ -d "$KAPP" ] || fresh=1
@@ -102,16 +173,7 @@ module_hanyoung() {
       ok "Karabiner 동작 중"
     fi
 
-    title "macOS 입력 소스 전환 단축키(F18) 설정"
-    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 61 \
-      "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
-    /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1
-    ok "'입력 메뉴에서 다음 소스 선택' = F18"
-    if defaults read com.apple.HIToolbox AppleEnabledInputSources 2>/dev/null | grep -q "inputmethod.Korean"; then
-      ok "한국어 입력기 확인"
-    else
-      warn "한국어 입력기가 없어요. 시스템 설정 > 키보드 > 입력 소스에서 '한국어 - 2벌식'을 추가하세요."
-    fi
+    set_f18_hotkey
   fi
 
   title "Karabiner 규칙 적용"
@@ -347,10 +409,7 @@ echo "==============================================="
 echo " 완료! 확인해 보세요:"
 printf "%b\n" "$DONE_MSG"
 echo
-echo " 안 되면: 시스템 설정 > 개인정보 보호 및 보안에서"
-echo "          입력 모니터링(Karabiner) 권한 확인"
-echo
 echo " 마우스 버튼·휠은 콕콕, 트랙패드 제스처는 톡톡 앱으로 따로 설정해요"
-echo "   → https://toktok.seoriarts.com"
+echo "   → https://apps.seoriarts.com"
 echo "==============================================="
 pause "창을 닫으려면"
