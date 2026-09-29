@@ -99,7 +99,8 @@ set_f18_hotkey() {
 # 앱 설치 없이: macOS 기본 hidutil 로 오른쪽 ⌘ → F18 (권한 · 드라이버 필요 없음)
 # 재부팅하면 풀려서 로그인할 때마다 다시 적용하는 LaunchAgent 를 둠
 HY_LABEL="com.seoriarts.hanyoung"
-HY_MAP='{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x7000000E7,"HIDKeyboardModifierMappingDst":0x70000006D}]}'
+# 오른쪽 ⌘(0xE7) · 한국어 자판 [한/영] 키(LANG1 0x90) → F18
+HY_MAP='{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x7000000E7,"HIDKeyboardModifierMappingDst":0x70000006D},{"HIDKeyboardModifierMappingSrc":0x700000090,"HIDKeyboardModifierMappingDst":0x70000006D}]}'
 hanyoung_native() {
   local agents="${LAUNCH_AGENTS_DIR:-$HOME/Library/LaunchAgents}" support="$HOME/Library/Application Support/mac-korean-essentials"
   [ "$SKIP" = "1" ] || set_f18_hotkey
@@ -112,9 +113,10 @@ hanyoung_native() {
   <key>Label</key><string>$HY_LABEL</string>
   <key>ProgramArguments</key><array><string>/usr/bin/hidutil</string><string>property</string><string>--set</string><string>$HY_MAP</string></array>
   <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>30</integer>
 </dict></plist>
 PL
-  ok "로그인할 때마다 자동으로 적용"
+  ok "로그인할 때마다 자동으로 적용 (외장 키보드를 나중에 연결해도 30초 안에 적용)"
   if [ "$SKIP" != "1" ]; then
     /usr/bin/hidutil property --set "$HY_MAP" >/dev/null && ok "지금 바로 적용 (오른쪽 ⌘ = 한/영)"
     launchctl bootout "gui/$(id -u)/$HY_LABEL" >/dev/null 2>&1
