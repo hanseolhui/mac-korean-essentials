@@ -9,6 +9,10 @@ rm -rf "$OUT"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 for arch in arm64 x86_64; do swiftc -O -target "$arch-apple-macos12.0" launcher/main.swift -o "$OUT/l-$arch"; done
 lipo -create "$OUT"/l-* -output "$APP/Contents/MacOS/MacKoreanEssentials"; rm "$OUT"/l-*
 cp install.command "$APP/Contents/Resources/"
+# 입력 소스 정리 도구 (설정 화면을 열지 않고 한/영만 오가게)
+for arch in arm64 x86_64; do swiftc -O -target "$arch-apple-macos12.0" launcher/inputs.swift -o "$OUT/k-$arch"; done
+lipo -create "$OUT"/k-* -output "$APP/Contents/Resources/ks-inputs"; rm "$OUT"/k-*
+codesign --force --options runtime --timestamp --sign "$(security find-identity -v -p codesigning | awk '/Developer ID Application/ {print $2; exit}')" "$APP/Contents/Resources/ks-inputs"
 # 앱 안에는 영문 이름으로 (한글 이름은 zip 을 풀 때 자모 표기가 바뀌어 서명이 깨짐 → '손상된 앱') · 실행할 때 한글 이름으로 되돌림
 mkdir -p "$APP/Contents/Resources/quick-actions"
 ditto "quick-actions/한글 파일명 윈도우용으로 정리.workflow" "$APP/Contents/Resources/quick-actions/hangul-filename.workflow"
@@ -26,8 +30,8 @@ cat > "$APP/Contents/Info.plist" <<PL
   <key>CFBundleIdentifier</key><string>com.seoriarts.mac-korean-essentials</string>
   <key>CFBundleExecutable</key><string>MacKoreanEssentials</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0.3</string>
-  <key>CFBundleVersion</key><string>4</string>
+  <key>CFBundleShortVersionString</key><string>1.0.4</string>
+  <key>CFBundleVersion</key><string>5</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>LSUIElement</key><true/>

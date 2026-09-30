@@ -8,7 +8,7 @@ try? fm.createDirectory(at: work, withIntermediateDirectories: true)
 
 // 앱에 들어 있는 설치기 · 빠른 동작 복사
 if let res = Bundle.main.resourceURL {
-    for name in ["install.command", "quick-actions"] {
+    for name in ["install.command", "quick-actions", "ks-inputs"] {
         let src = res.appendingPathComponent(name)
         if fm.fileExists(atPath: src.path) { try? fm.copyItem(at: src, to: work.appendingPathComponent(name)) }
     }

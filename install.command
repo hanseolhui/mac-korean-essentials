@@ -89,11 +89,61 @@ set_f18_hotkey() {
     "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
   /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1
   ok "'입력 메뉴에서 다음 소스 선택' = F18"
-  if defaults read com.apple.HIToolbox AppleEnabledInputSources 2>/dev/null | grep -q "inputmethod.Korean"; then
-    ok "한국어 입력기 확인"
-  else
-    warn "한국어 입력기가 없어요. 시스템 설정 > 키보드 > 입력 소스에서 '한국어 - 2벌식'을 추가하세요."
+}
+
+# 입력 소스 정리: 한/영(ABC · 한국어)만 오가게 — 설정 화면을 열지 않고 바로 (설치 앱 안의 ks-inputs)
+KS="${KS_INPUTS:-$SRC_DIR/ks-inputs}"
+fix_input_sources() {
+  title "입력 소스 점검"
+  if [ ! -x "$KS" ]; then   # 한 줄 설치(curl)로 실행한 경우: 확인만
+    if defaults read com.apple.HIToolbox AppleEnabledInputSources 2>/dev/null | grep -q "inputmethod.Korean"; then ok "한국어 입력기 확인"
+    else warn "한국어 입력기가 없어요. 시스템 설정 > 키보드 > 입력 소스에서 '한국어 - 2벌식'을 추가하세요."; fi
+    return
   fi
+  "$KS" fix --add >/dev/null 2>&1   # 한국어 · ABC 가 없으면 먼저 켬
+  local list n names
+  list=$("$KS" list 2>/dev/null); n=$(printf '%s\n' "$list" | grep -c .)
+  names=$(printf '%s\n' "$list" | cut -f2 | paste -sd ',' - | sed 's/,/, /g')
+  if [ "$n" -gt 2 ]; then
+    local ans="정리하기"
+    [ "$SKIP" = "1" ] || ans=$(osascript -e "button returned of (display dialog \"입력 소스가 ${n}개 있어요: ${names}\n\n오른쪽 ⌘는 이 순서대로 넘기기 때문에, 한/영만 오가려면 ABC와 한국어만 남겨야 해요.\n\n정리할까요? (다른 언어는 나중에 다시 켤 수 있어요)\" buttons {\"그대로 두기\", \"정리하기\"} default button \"정리하기\" with title \"한/영 전환\")" 2>/dev/null)
+    if [ "$ans" = "정리하기" ]; then
+      ok "입력 소스 정리: $("$KS" fix | cut -f1)"
+    else
+      warn "입력 소스 ${n}개 그대로 (오른쪽 ⌘를 누르면 ${names} 순서로 넘어가요)"
+    fi
+  fi
+  ok "입력 소스: $("$KS" list | cut -f2 | paste -sd ',' - | sed 's/,/ ⇄ /g')"
+}
+
+# Karabiner 가 켜져 있으면 키보드를 Karabiner 가 잡고 있어서 hidutil 설정이 안 먹음 → Karabiner 설정에도 같은 규칙을 넣음
+karabiner_running() { pgrep -qf "Karabiner-Core-Service|karabiner_grabber|Karabiner-VirtualHIDDevice"; }
+karabiner_add_rule() {
+  mkdir -p "$(dirname "$KJSON")"; backup "$KJSON"
+  run_jxa "$KJSON" "$RULE_DESC" <<'JS' >/dev/null
+ObjC.import('Foundation');
+function run(argv){ const [p, desc]=argv;
+  const s=$.NSString.stringWithContentsOfFileEncodingError(p,$.NSUTF8StringEncoding,null);
+  const c=s.isNil()?{global:{},profiles:[{name:"Default profile",selected:true}]}:JSON.parse(ObjC.unwrap(s));
+  const prof=(c.profiles||[]).find(x=>x.selected)||c.profiles[0];
+  const cm=prof.complex_modifications=prof.complex_modifications||{};
+  cm.rules=(cm.rules||[]).filter(r=>!(r.description||'').startsWith('[한영키]'));
+  cm.rules.push({description:desc,manipulators:[
+    {type:'basic',from:{key_code:'right_command',modifiers:{optional:['any']}},to:[{key_code:'right_command',lazy:true}],to_if_alone:[{key_code:'f18'}]},
+    {type:'basic',from:{key_code:'lang1',modifiers:{optional:['any']}},to:[{key_code:'f18'}]}]});
+  $(JSON.stringify(c,null,4)).writeToFileAtomicallyEncodingError(p,true,$.NSUTF8StringEncoding,null); return 'ok'; }
+JS
+}
+
+# 마지막 확인: 실제로 적용됐는지 (문제가 있으면 여기서 알려 줌)
+verify_hanyoung() {
+  title "한/영 전환 확인"
+  local bad=0
+  if /usr/bin/hidutil property --get UserKeyMapping 2>/dev/null | grep -q "30064771181" || karabiner_running; then ok "오른쪽 ⌘ → 한/영 키"
+  else warn "오른쪽 ⌘ 설정이 아직 적용되지 않았어요 — 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
+  if defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys 2>/dev/null | awk '/^ *61 = /{f=1} f&&/enabled/{print; exit}' | grep -q "= 1"; then ok "한/영 전환 단축키 켜짐"
+  else warn "한/영 전환 단축키가 꺼져 있어요 — 다시 로그인한 뒤 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
+  [ "$bad" = "0" ] && ok "모두 준비됐어요. 오른쪽 ⌘를 한 번 눌러 보세요"
 }
 
 # 앱 설치 없이: macOS 기본 hidutil 로 오른쪽 ⌘ → F18 (권한 · 드라이버 필요 없음)
@@ -122,7 +172,7 @@ PL
     launchctl bootout "gui/$(id -u)/$HY_LABEL" >/dev/null 2>&1
     launchctl bootstrap "gui/$(id -u)" "$agents/$HY_LABEL.plist" >/dev/null 2>&1
     # 예전에 Karabiner 로 설치했다면: 우리 규칙만 빼서 겹치지 않게 (Karabiner 앱 자체는 그대로)
-    if [ -f "$KJSON" ] && grep -q "\[한영키\]" "$KJSON"; then
+    if [ -f "$KJSON" ] && grep -q "\[한영키\]" "$KJSON" && ! karabiner_running; then
       backup "$KJSON"
       run_jxa "$KJSON" <<'JS' >/dev/null
 ObjC.import('Foundation');
@@ -132,6 +182,11 @@ function run(argv){ const p=argv[0]; const s=$.NSString.stringWithContentsOfFile
 JS
       ok "예전에 설치한 Karabiner 한/영 규칙은 뺐어요 (Karabiner 앱은 지워도 돼요)"
     fi
+    fix_input_sources
+    if karabiner_running; then
+      karabiner_add_rule && ok "Karabiner 가 켜져 있어서 Karabiner 에도 같은 한/영 규칙을 넣었어요 (Karabiner 가 키보드를 잡고 있으면 기본 설정이 안 먹어서)"
+    fi
+    sleep 1; verify_hanyoung
   fi
   # 되돌리기 파일
   mkdir -p "$support"
