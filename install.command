@@ -66,11 +66,15 @@ function run(){
                  '📁  한글 파일명 윈도우용으로 정리 (Finder 우클릭 메뉴 추가)',
                  '⚙️  맥북 기본 설정 (키보드·Finder·배터리 %·스크린샷)'];
   const keys  = ['hanyoung', 'filename', 'basics'];
+  // 목록 창은 한 줄을 그냥 누르면 나머지 선택이 풀려서 빠뜨리기 쉬움 → 먼저 버튼으로 묻고, 고를 땐 하나씩 예/아니요
+  const ask = (text, buttons, def) => app.displayDialog(text, { withTitle:'맥 한국인 필수 설정', buttons, defaultButton: def }).buttonReturned;
   let r;
-  try { r = app.chooseFromList(items, { withTitle:'맥 한국인 필수 설정',
-        withPrompt:'적용할 항목을 고르세요. (⌘ 클릭으로 여러 개 선택)',
-        defaultItems: items, multipleSelectionsAllowed:true, emptySelectionAllowed:false }); }
-  catch(e) { r = false; }
+  try {
+    const how = ask('적용할 항목:\n\n' + items.map(x => '  ' + x).join('\n') + '\n\n세 가지를 모두 적용할까요?', ['취소', '골라서 적용', '모두 적용'], '모두 적용');
+    if (how === '모두 적용') r = items;
+    else if (how === '취소') r = [];
+    else r = items.filter(x => ask(x + '\n\n이 항목을 적용할까요?', ['건너뛰기', '적용'], '적용') === '적용');
+  } catch(e) { r = false; }   // 취소
   return (r || []).map(x => keys[items.indexOf(x)]).join(',');
 }
 JS
@@ -389,10 +393,15 @@ function run(){
     '📸 스크린샷을 바탕화면 대신 사진 > 스크린샷 폴더에 저장'];
   const keys = ['keyrepeat','tabnav','autocorrect','extensions','pathbar','newwindow','searchscope','battery','screenshot'];
   let r;
-  try { r = app.chooseFromList(items, { withTitle:'맥북 기본 설정',
-        withPrompt:'적용할 설정을 고르세요. (⌘ 클릭으로 선택 해제)\n원래대로 돌리는 파일도 함께 만들어 드려요.',
-        defaultItems: items, multipleSelectionsAllowed:true, emptySelectionAllowed:true }); }
-  catch(e) { r = false; }
+  try {
+    const how = app.displayDialog('바꿀 설정:\n\n' + items.map(x => '  ' + x).join('\n') + '\n\n원래대로 돌리는 파일도 함께 만들어 드려요.',
+      { withTitle:'맥북 기본 설정', buttons:['건너뛰기', '골라서 적용', '모두 적용'], defaultButton:'모두 적용' }).buttonReturned;
+    if (how === '모두 적용') r = items;
+    else if (how === '골라서 적용') r = app.chooseFromList(items, { withTitle:'맥북 기본 설정',
+        withPrompt:'적용할 설정만 남겨 주세요.\n⌘를 누른 채 클릭하면 하나씩 켜고 끌 수 있어요. (그냥 클릭하면 그 하나만 남아요)',
+        defaultItems: items, multipleSelectionsAllowed:true, emptySelectionAllowed:true });
+    else r = [];
+  } catch(e) { r = false; }
   return (r || []).map(x => keys[items.indexOf(x)]).join(',');
 }
 JS
@@ -457,14 +466,20 @@ EOF
 }
 
 DONE_MSG=""
-has hanyoung && module_hanyoung
-has filename && module_filename
-has basics   && module_basics
+SKIPPED=""
+if has hanyoung; then module_hanyoung; else SKIPPED="${SKIPPED}\n • 오른쪽 ⌘로 한/영 전환"; fi
+if has filename; then module_filename; else SKIPPED="${SKIPPED}\n • 한글 파일명 윈도우용으로 정리"; fi
+if has basics;   then module_basics;   else SKIPPED="${SKIPPED}\n • 맥북 기본 설정 (이걸 적용해야 기본설정-되돌리기.command 가 생겨요)"; fi
 
 echo
 echo "==============================================="
 echo " 완료! 확인해 보세요:"
 printf "%b\n" "$DONE_MSG"
+if [ -n "$SKIPPED" ]; then
+  echo
+  echo " 이번에 적용하지 않은 항목 (다시 실행하면 적용할 수 있어요):"
+  printf "%b\n" "$SKIPPED"
+fi
 echo
 echo " 마우스 버튼·휠은 콕콕, 트랙패드 제스처는 톡톡 앱으로 따로 설정해요"
 echo "   → https://apps.seoriarts.com"
