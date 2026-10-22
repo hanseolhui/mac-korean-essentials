@@ -114,8 +114,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/mac-korean-es
 **갑자기 안 돼요**
 → 설치기를 다시 실행하세요. 로그인할 때 자동으로 다시 적용되게 되어 있어요 (`~/Library/LaunchAgents/com.seoriarts.hanyoung.plist`).
 
-**한/영 말고 다른 언어로도 바뀌어요**
-→ 입력 소스를 **ABC + 한국어 2벌식** 두 개만 남겨 두세요 (시스템 설정 → 키보드 → 입력 소스).
+**일본어 · 중국어 같은 다른 언어도 켜 두고 싶어요**
+→ 켜 둬도 돼요. 오른쪽 ⌘는 **마지막에 쓴 두 언어 사이만** 오가요 (macOS 「이전 입력 소스 선택」). 다른 언어는 메뉴 막대나 ⌃⌥Space 로.
 
 **전환은 되는데 반영이 늦어요**
 → 이 설치기는 macOS 기본 단축키(F18)를 거쳐 전환해서 바로 반영돼요. 예전에 이 설치기로 Karabiner 규칙을 넣었다면 다시 실행할 때 그 규칙은 빼 줘요.
