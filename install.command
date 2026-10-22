@@ -89,10 +89,16 @@ has() { case ",$MODULES," in *",$1,"*) return 0;; esac; return 1; }
 # macOS 입력 소스 전환 단축키: '입력 메뉴에서 다음 소스 선택' = F18 (두 방식 공통)
 set_f18_hotkey() {
   title "macOS 입력 소스 전환 단축키(F18) 설정"
-  defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 61 \
-    "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
+  # F18 = 「이전 입력 소스 선택」(60): 마지막에 쓴 두 입력 소스만 오감 → 일본어 · 중국어 등을 같이 켜 둬도 오른쪽 ⌘는 한/영만
+  #   (예전 버전은 「다음 소스」(61)에 걸어서 켜 둔 언어를 순서대로 다 돌았음 → 61은 macOS 기본 ⌃⌥Space 로 되돌림)
+  local F18="<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
+  defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 60 "$F18"
+  if defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys 2>/dev/null | awk '/^ *61 = /{f=1} f&&/79,/{print; exit} f&&/};/{exit}' | grep -q 79; then
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 61 \
+      "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>786432</integer></array><key>type</key><string>standard</string></dict></dict>"
+  fi
   /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1
-  ok "'입력 메뉴에서 다음 소스 선택' = F18"
+  ok "'이전 입력 소스 선택' = F18 (오른쪽 ⌘ = 마지막에 쓴 두 언어 사이만, 보통 한/영)"
 }
 
 # 입력 소스 정리: 한/영(ABC · 한국어)만 오가게 — 설정 화면을 열지 않고 바로 (설치 앱 안의 ks-inputs)
@@ -109,12 +115,12 @@ fix_input_sources() {
   list=$("$KS" list 2>/dev/null); n=$(printf '%s\n' "$list" | grep -c .)
   names=$(printf '%s\n' "$list" | cut -f2 | paste -sd ',' - | sed 's/,/, /g')
   if [ "$n" -gt 2 ]; then
-    local ans="정리하기"
-    [ "$SKIP" = "1" ] || ans=$(osascript -e "button returned of (display dialog \"입력 소스가 ${n}개 있어요: ${names}\n\n오른쪽 ⌘는 이 순서대로 넘기기 때문에, 한/영만 오가려면 ABC와 한국어만 남겨야 해요.\n\n정리할까요? (다른 언어는 나중에 다시 켤 수 있어요)\" buttons {\"그대로 두기\", \"정리하기\"} default button \"정리하기\" with title \"한/영 전환\")" 2>/dev/null)
+    local ans="그대로 두기"
+    [ "$SKIP" = "1" ] || ans=$(osascript -e "button returned of (display dialog \"입력 소스가 ${n}개 있어요: ${names}\n\n그대로 둬도 오른쪽 ⌘는 마지막에 쓴 두 언어(보통 한/영) 사이만 오가요. 다른 언어는 메뉴 막대나 ⌃⌥Space 로 고르면 돼요.\n\n안 쓰는 언어를 정리할까요? (나중에 다시 켤 수 있어요)\" buttons {\"정리하기\", \"그대로 두기\"} default button \"그대로 두기\" with title \"한/영 전환\")" 2>/dev/null)
     if [ "$ans" = "정리하기" ]; then
       ok "입력 소스 정리: $("$KS" fix | cut -f1)"
     else
-      warn "입력 소스 ${n}개 그대로 (오른쪽 ⌘를 누르면 ${names} 순서로 넘어가요)"
+      ok "입력 소스 ${n}개 그대로 (오른쪽 ⌘는 마지막에 쓴 두 언어 사이만 — 다른 언어는 메뉴 막대 · ⌃⌥Space)"
     fi
   fi
   ok "입력 소스: $("$KS" list | cut -f2 | paste -sd ',' - | sed 's/,/ ⇄ /g')"
@@ -145,7 +151,7 @@ verify_hanyoung() {
   local bad=0
   if /usr/bin/hidutil property --get UserKeyMapping 2>/dev/null | grep -q "30064771181" || karabiner_running; then ok "오른쪽 ⌘ → 한/영 키"
   else warn "오른쪽 ⌘ 설정이 아직 적용되지 않았어요 — 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
-  if defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys 2>/dev/null | awk '/^ *61 = /{f=1} f&&/enabled/{print; exit}' | grep -q "= 1"; then ok "한/영 전환 단축키 켜짐"
+  if defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys 2>/dev/null | awk '/^ *60 = /{f=1} f&&/enabled/{print; exit}' | grep -q "= 1"; then ok "한/영 전환 단축키 켜짐"
   else warn "한/영 전환 단축키가 꺼져 있어요 — 다시 로그인한 뒤 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
   [ "$bad" = "0" ] && ok "모두 준비됐어요. 오른쪽 ⌘를 한 번 눌러 보세요"
 }
