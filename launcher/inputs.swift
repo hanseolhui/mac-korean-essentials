@@ -2,8 +2,13 @@
 //   ks-inputs list          → 전환되는 입력 소스 (id \t 이름)
 //   ks-inputs fix           → 한국어 2벌식 · ABC 가 없으면 켜고, 나머지 키보드 입력 소스는 끔 (한/영만 오가게)
 //   ks-inputs fix --add     → 없으면 켜기만 (나머지는 그대로)
+//   ks-inputs current       → 지금 입력 소스 id
+//   ks-inputs toggle        → 한국어면 ABC로, 아니면 한국어로 (다른 언어를 켜 둬도 한/영만)
+//   ks-inputs daemon        → 「한/영만 고정」 도우미: F18(오른쪽 ⌘)을 누를 때마다 toggle — LaunchAgent 로 늘 켜 둠
+//                             단축키 등록(RegisterEventHotKey)이라 손쉬운 사용 · 입력 모니터링 권한이 필요 없음
 // 시스템 설정을 열지 않고 바로 적용돼요 (TIS API)
 import Carbon
+import AppKit
 
 func sources(all: Bool) -> [TISInputSource] {
     let props = [kTISPropertyInputSourceCategory as String: kTISCategoryKeyboardInputSource as String] as CFDictionary
@@ -35,6 +40,16 @@ func enable(_ wanted: String) -> Bool {
     return ok
 }
 
+/// 한국어 ↔ 영문만 오감. 영문은 ABC 먼저, 한국어는 2벌식 먼저 (켜져 있는 것 중에서)
+func toggle() {
+    let now = switchable()
+    guard let cur = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else { return }
+    let latin = now.first { id($0) == "com.apple.keylayout.ABC" } ?? now.first(where: isLatin)
+    let korean = now.first { id($0) == "com.apple.inputmethod.Korean.2SetKorean" } ?? now.first(where: isKorean)
+    guard let to = isKorean(cur) ? latin : korean else { return }
+    TISSelectInputSource(to)
+}
+
 let args = CommandLine.arguments.dropFirst()
 switch args.first {
 case "list":
@@ -54,7 +69,27 @@ case "fix":
     }
     let left = switchable().map(name)
     print((done.isEmpty ? "바꿀 것 없음" : done.joined(separator: " · ")) + "\t" + left.joined(separator: ", "))
+case "current":
+    if let cur = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() { print(id(cur)) }
+case "toggle":
+    toggle()
+case "daemon":
+    // F18 = 키코드 79 (오른쪽 ⌘ · [한/영] 키가 hidutil 로 바뀐 키), 수정키 없이
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)   // .prohibited 이면 단축키 이벤트가 안 옴
+    var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+    InstallEventHandler(GetApplicationEventTarget(), { _, _, _ in
+        toggle()
+        if ProcessInfo.processInfo.environment["KS_DEBUG"] != nil { print("toggle"); fflush(stdout) }
+        return noErr
+    }, 1, &spec, nil, nil)
+    var ref: EventHotKeyRef?
+    let hid = EventHotKeyID(signature: OSType(0x4B4F4B4F), id: 1)   // 'KOKO'
+    guard RegisterEventHotKey(79, 0, hid, GetApplicationEventTarget(), 0, &ref) == noErr else {
+        print("F18 단축키를 등록하지 못했어요"); exit(1)
+    }
+    app.run()
 default:
-    print("사용법: ks-inputs list | fix [--add]")
+    print("사용법: ks-inputs list | fix [--add] | current | toggle | daemon")
     exit(1)
 }

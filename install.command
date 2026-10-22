@@ -103,6 +103,42 @@ set_f18_hotkey() {
 
 # 입력 소스 정리: 한/영(ABC · 한국어)만 오가게 — 설정 화면을 열지 않고 바로 (설치 앱 안의 ks-inputs)
 KS="${KS_INPUTS:-$SRC_DIR/ks-inputs}"
+# 「한/영만 고정」 도우미: ks-inputs daemon 이 F18(오른쪽 ⌘)을 받아 한국어 ↔ ABC 만 오감 (LaunchAgent 로 늘 켜 둠)
+STRICT_LABEL="com.seoriarts.hanyoung-strict"
+STRICT_AGENT="${LAUNCH_AGENTS_DIR:-$HOME/Library/LaunchAgents}/$STRICT_LABEL.plist"
+strict_on() {
+  local support="$HOME/Library/Application Support/mac-korean-essentials"
+  mkdir -p "$support" "$(dirname "$STRICT_AGENT")"
+  cp -f "$KS" "$support/ks-inputs" && chmod +x "$support/ks-inputs"
+  cat > "$STRICT_AGENT" <<PL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$STRICT_LABEL</string>
+  <key>ProgramArguments</key><array><string>$support/ks-inputs</string><string>daemon</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ProcessType</key><string>Interactive</string>
+</dict></plist>
+PL
+  if [ "$SKIP" != "1" ]; then
+    # F18 을 시스템 단축키에서 빼서 도우미만 받게 (「이전 입력 소스」는 macOS 기본 ⌃Space 로 되돌림)
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 60 \
+      "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>262144</integer></array><key>type</key><string>standard</string></dict></dict>"
+    /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1
+    launchctl bootout "gui/$(id -u)/$STRICT_LABEL" >/dev/null 2>&1
+    launchctl bootstrap "gui/$(id -u)" "$STRICT_AGENT" >/dev/null 2>&1
+  fi
+  STRICT=1
+  ok "한/영만 고정: 오른쪽 ⌘는 늘 한국어 ↔ ABC (도우미 켜짐 · 다시 실행해서 「그대로 두기」를 고르면 꺼져요)"
+}
+strict_off() {
+  [ -f "$STRICT_AGENT" ] || return 0
+  [ "$SKIP" = "1" ] || launchctl bootout "gui/$(id -u)/$STRICT_LABEL" >/dev/null 2>&1
+  rm -f "$STRICT_AGENT"
+  ok "한/영만 고정 도우미는 껐어요"
+}
+
 fix_input_sources() {
   title "입력 소스 점검"
   if [ ! -x "$KS" ]; then   # 한 줄 설치(curl)로 실행한 경우: 확인만
@@ -115,13 +151,21 @@ fix_input_sources() {
   list=$("$KS" list 2>/dev/null); n=$(printf '%s\n' "$list" | grep -c .)
   names=$(printf '%s\n' "$list" | cut -f2 | paste -sd ',' - | sed 's/,/, /g')
   if [ "$n" -gt 2 ]; then
-    local ans="그대로 두기"
-    [ "$SKIP" = "1" ] || ans=$(osascript -e "button returned of (display dialog \"입력 소스가 ${n}개 있어요: ${names}\n\n그대로 둬도 오른쪽 ⌘는 마지막에 쓴 두 언어(보통 한/영) 사이만 오가요. 다른 언어는 메뉴 막대나 ⌃⌥Space 로 고르면 돼요.\n\n안 쓰는 언어를 정리할까요? (나중에 다시 켤 수 있어요)\" buttons {\"정리하기\", \"그대로 두기\"} default button \"그대로 두기\" with title \"한/영 전환\")" 2>/dev/null)
-    if [ "$ans" = "정리하기" ]; then
-      ok "입력 소스 정리: $("$KS" fix | cut -f1)"
-    else
-      ok "입력 소스 ${n}개 그대로 (오른쪽 ⌘는 마지막에 쓴 두 언어 사이만 — 다른 언어는 메뉴 막대 · ⌃⌥Space)"
+    local ans="${HANYOUNG_CHOICE:-그대로 두기}"
+    if [ "$SKIP" != "1" ]; then
+      if "$KS" current >/dev/null 2>&1; then   # 도우미가 들어 있는 설치 앱(1.0.6+)일 때만 「한/영만 고정」
+        ans=$(osascript -e "button returned of (display dialog \"입력 소스가 ${n}개 있어요: ${names}\n\n• 그대로 두기 — 오른쪽 ⌘는 마지막에 쓴 두 언어(보통 한/영) 사이만 오가요\n• 한/영만 고정 (시험 중) — 방금 다른 언어를 썼어도 오른쪽 ⌘는 늘 한국어 ↔ ABC 만. 작은 도우미가 배경에서 켜져 있어요 (권한 필요 없음)\n• 정리하기 — 안 쓰는 언어를 꺼요 (나중에 다시 켤 수 있어요)\" buttons {\"정리하기\", \"한/영만 고정\", \"그대로 두기\"} default button \"그대로 두기\" with title \"한/영 전환\")" 2>/dev/null)
+      else
+        ans=$(osascript -e "button returned of (display dialog \"입력 소스가 ${n}개 있어요: ${names}\n\n그대로 둬도 오른쪽 ⌘는 마지막에 쓴 두 언어(보통 한/영) 사이만 오가요.\n\n안 쓰는 언어를 정리할까요? (나중에 다시 켤 수 있어요)\" buttons {\"정리하기\", \"그대로 두기\"} default button \"그대로 두기\" with title \"한/영 전환\")" 2>/dev/null)
+      fi
     fi
+    case "$ans" in
+      정리하기) ok "입력 소스 정리: $("$KS" fix | cut -f1)"; strict_off ;;
+      "한/영만 고정") strict_on ;;
+      *) ok "입력 소스 ${n}개 그대로 (오른쪽 ⌘는 마지막에 쓴 두 언어 사이만 — 다른 언어는 메뉴 막대 · ⌃⌥Space)"; strict_off ;;
+    esac
+  else
+    strict_off
   fi
   ok "입력 소스: $("$KS" list | cut -f2 | paste -sd ',' - | sed 's/,/ ⇄ /g')"
 }
@@ -151,7 +195,10 @@ verify_hanyoung() {
   local bad=0
   if /usr/bin/hidutil property --get UserKeyMapping 2>/dev/null | grep -q "30064771181" || karabiner_running; then ok "오른쪽 ⌘ → 한/영 키"
   else warn "오른쪽 ⌘ 설정이 아직 적용되지 않았어요 — 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
-  if defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys 2>/dev/null | awk '/^ *60 = /{f=1} f&&/enabled/{print; exit}' | grep -q "= 1"; then ok "한/영 전환 단축키 켜짐"
+  if [ "${STRICT:-0}" = "1" ]; then
+    if launchctl print "gui/$(id -u)/$STRICT_LABEL" >/dev/null 2>&1; then ok "한/영만 고정 도우미 켜짐"
+    else warn "한/영만 고정 도우미가 켜지지 않았어요 — 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
+  elif defaults read com.apple.symbolichotkeys AppleSymbolicHotKeys 2>/dev/null | awk '/^ *60 = /{f=1} f&&/enabled/{print; exit}' | grep -q "= 1"; then ok "한/영 전환 단축키 켜짐"
   else warn "한/영 전환 단축키가 꺼져 있어요 — 다시 로그인한 뒤 설치 앱을 한 번 더 실행해 주세요"; bad=1; fi
   [ "$bad" = "0" ] && ok "모두 준비됐어요. 오른쪽 ⌘를 한 번 눌러 보세요"
 }
@@ -205,6 +252,8 @@ JS
 # 오른쪽 ⌘ 한/영 키를 원래 ⌘ 로 되돌리기
 launchctl bootout "gui/\$(id -u)/$HY_LABEL" >/dev/null 2>&1
 rm -f "$agents/$HY_LABEL.plist"
+launchctl bootout "gui/\$(id -u)/$STRICT_LABEL" >/dev/null 2>&1
+rm -f "$STRICT_AGENT"
 /usr/bin/hidutil property --set '{"UserKeyMapping":[]}' >/dev/null
 echo "오른쪽 ⌘ 를 원래대로 돌렸어요. 이 창은 닫아도 돼요."
 RV
